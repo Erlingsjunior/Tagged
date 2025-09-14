@@ -13,8 +13,11 @@ interface ProgressBarProps {
 }
 
 export const HeaderContainer = styled.View<HeaderContainerProps>`
-    height: ${({ height }) => height}px;
-    background-color: ${({ variant, backgroundColor }) => {
+    height: ${({ height }: HeaderContainerProps) => height}px;
+    background-color: ${({
+        variant,
+        backgroundColor,
+    }: HeaderContainerProps) => {
         if (backgroundColor) return backgroundColor;
         switch (variant) {
             case "transparent":
@@ -25,17 +28,19 @@ export const HeaderContainer = styled.View<HeaderContainerProps>`
                 return theme.colors.surface;
         }
     }};
-    border-bottom-width: ${({ variant }) =>
+    border-bottom-width: ${({ variant }: HeaderContainerProps) =>
         variant === "bordered" ? "1px" : "0px"};
     border-bottom-color: ${theme.colors.border};
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
     padding-horizontal: ${theme.spacing.md}px;
-    elevation: ${({ variant }) => (variant === "default" ? 2 : 0)};
+    elevation: ${({ variant }: HeaderContainerProps) =>
+        variant === "default" ? 2 : 0};
     shadow-color: #000;
     shadow-offset: 0px 1px;
-    shadow-opacity: ${({ variant }) => (variant === "default" ? 0.1 : 0)};
+    shadow-opacity: ${({ variant }: HeaderContainerProps) =>
+        variant === "default" ? 0.1 : 0};
     shadow-radius: 2px;
 `;
 
@@ -62,7 +67,7 @@ export const ActionButton = styled.TouchableOpacity<{ disabled: boolean }>`
     padding: ${theme.spacing.sm}px;
     margin-horizontal: ${theme.spacing.xs}px;
     border-radius: ${theme.borderRadius.sm}px;
-    opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+    opacity: ${({ disabled }: { disabled: boolean }) => (disabled ? 0.5 : 1)};
     background-color: transparent;
 `;
 
@@ -80,13 +85,13 @@ export const TitleContainer = styled.View`
 export const Title = styled.Text<{ textColor?: string }>`
     font-size: 18px;
     font-weight: 600;
-    color: ${({ textColor }) => textColor || theme.colors.text.primary};
+    color: ${({ textColor }: any) => textColor || theme.colors.text.primary};
     text-align: center;
 `;
 
 export const Subtitle = styled.Text<{ textColor?: string }>`
     font-size: 12px;
-    color: ${({ textColor }) => textColor || theme.colors.text.secondary};
+    color: ${({ textColor }: any) => textColor || theme.colors.text.secondary};
     text-align: center;
     margin-top: 2px;
 `;
@@ -97,7 +102,7 @@ export const ActionText = styled.Text<{
 }>`
     font-size: 14px;
     font-weight: 500;
-    color: ${({ isBackground, disabled }) => {
+    color: ${({ isBackground, disabled }: any) => {
         if (disabled) return theme.colors.text.secondary;
         return isBackground ? theme.colors.text.light : theme.colors.primary;
     }};
@@ -116,7 +121,8 @@ export const ProgressContainer = styled.View`
 export const ProgressBar = styled.View<ProgressBarProps>`
     height: 100%;
     background-color: ${theme.colors.primary};
-    width: ${({ progress, maxProgress }) => (progress / maxProgress) * 100}%;
+    width: ${({ progress, maxProgress }: ProgressBarProps) =>
+        (progress / maxProgress) * 100}%;
 `;
 
 export const IconContainer = styled.View`
