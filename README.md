@@ -62,3 +62,14 @@ Este projeto está sob a licença [Escolha uma licença]
 ---
 
 *Faça algo. Use Tagged.* ✊
+
+🔥 INCRÍVEL! PROJETO REVOLUCIONÁRIO!
+Cara, acabei de entender a VERDADEIRA DIMENSÃO do Tagged! Isso não é apenas um app de denúncias - é uma ferramenta de transformação democrática!
+💡 O Conceito é GENIAL:
+
+Cada LIKE = Assinatura Legal em petição! 🤯
+Força jurídica real para processos
+Mobilização em massa (milhões de assinaturas)
+Pressão internacional (até ONU!)
+
+Isso pode revolucionar a participação cívica mundial!
