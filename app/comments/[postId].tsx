@@ -15,10 +15,11 @@ import { Ionicons } from "@expo/vector-icons";
 import styled from "styled-components/native";
 import { theme } from "../../constants/Theme";
 import { useAuthStore } from "../../stores/authStore";
-import { useCommentStore, Comment, CommentReply } from "../../stores/commentStore";
 import { Avatar } from "../../components/UI/Avatar";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { mockComments } from "../../services/mockData";
+import { Comment } from "../../types";
 
 const Container = styled(SafeAreaView)`
     flex: 1;
@@ -104,17 +105,6 @@ const ActionText = styled(Text)<{ active?: boolean }>`
     font-weight: ${(props) => (props.active ? "600" : "normal")};
 `;
 
-const RepliesContainer = styled(View)`
-    margin-left: 50px;
-    border-left-width: 2px;
-    border-left-color: ${theme.colors.border};
-    padding-left: ${theme.spacing.md}px;
-`;
-
-const ReplyContainer = styled(View)`
-    padding-top: ${theme.spacing.md}px;
-`;
-
 const InputContainer = styled(KeyboardAvoidingView)`
     background-color: ${theme.colors.surface};
     border-top-width: 1px;
@@ -164,133 +154,66 @@ export default function CommentsScreen() {
     const postId = params.postId as string;
 
     const { user } = useAuthStore();
-    const { getComments, addComment, addReply, toggleLike, deleteComment, deleteReply } = useCommentStore();
 
-    const [comments, setComments] = useState<Comment[]>([]);
     const [inputText, setInputText] = useState("");
-    const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
     const scrollViewRef = useRef<ScrollView>(null);
 
-    useEffect(() => {
-        loadComments();
-    }, [postId]);
-
-    const loadComments = () => {
-        const postComments = getComments(postId);
-        setComments(postComments);
-    };
+    const comments = mockComments.get(postId) || [];
+    const sortedComments = [...comments].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     const handleSendComment = () => {
         if (!inputText.trim() || !user) return;
 
-        if (replyingTo) {
-            addReply(postId, replyingTo.id, inputText.trim(), user.id, user.name, user.avatar);
-        } else {
-            addComment(postId, inputText.trim(), user.id, user.name, user.avatar);
-        }
-
+        // Mock data is read-only - just show feedback
+        Alert.alert(
+            "Comentário Enviado",
+            "Em um app real, seu comentário seria adicionado aqui!",
+            [{ text: "OK" }]
+        );
         setInputText("");
-        setReplyingTo(null);
-        loadComments();
-
-        // Scroll to bottom
-        setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
     };
 
-    const handleLike = (comment: Comment, isReply = false, reply?: CommentReply) => {
+    const handleLike = (comment: Comment) => {
         if (!user) return;
 
-        if (isReply && reply) {
-            toggleLike(postId, comment.id, user.id, true, reply.id);
-        } else {
-            toggleLike(postId, comment.id, user.id, false);
-        }
-
-        loadComments();
-    };
-
-    const handleReply = (comment: Comment) => {
-        setReplyingTo(comment);
-    };
-
-    const handleDelete = (comment: Comment, reply?: CommentReply) => {
+        // Mock data is read-only - just show feedback
         Alert.alert(
-            "Excluir Comentário",
-            "Tem certeza que deseja excluir este comentário?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                {
-                    text: "Excluir",
-                    style: "destructive",
-                    onPress: () => {
-                        if (reply) {
-                            deleteReply(postId, comment.id, reply.id);
-                        } else {
-                            deleteComment(postId, comment.id);
-                        }
-                        loadComments();
-                    },
-                },
-            ]
-        );
-    };
-
-    const renderReply = (comment: Comment, reply: CommentReply) => {
-        const isLiked = user ? reply.likedBy.includes(user.id) : false;
-        const isOwner = user?.id === reply.userId;
-
-        return (
-            <ReplyContainer key={reply.id}>
-                <CommentHeader>
-                    <Avatar name={reply.userName} avatar={reply.userAvatar} size="medium" />
-                    <CommentInfo>
-                        <UserName>{reply.userName}</UserName>
-                        <TimeText>{formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true, locale: ptBR })}</TimeText>
-                    </CommentInfo>
-                    {isOwner && (
-                        <TouchableOpacity onPress={() => handleDelete(comment, reply)}>
-                            <Ionicons name="trash-outline" size={18} color={theme.colors.error} />
-                        </TouchableOpacity>
-                    )}
-                </CommentHeader>
-
-                <CommentContent>{reply.content}</CommentContent>
-
-                <CommentActions>
-                    <ActionButton onPress={() => handleLike(comment, true, reply)}>
-                        <Ionicons
-                            name={isLiked ? "heart" : "heart-outline"}
-                            size={16}
-                            color={isLiked ? theme.colors.error : theme.colors.text.secondary}
-                        />
-                        <ActionText active={isLiked}>{reply.likes}</ActionText>
-                    </ActionButton>
-                </CommentActions>
-            </ReplyContainer>
+            "Like Registrado",
+            "Em um app real, seu like seria contabilizado!",
+            [{ text: "OK" }]
         );
     };
 
     const renderComment = (comment: Comment) => {
-        const isLiked = user ? comment.likedBy.includes(user.id) : false;
-        const isOwner = user?.id === comment.userId;
-
         return (
             <CommentContainer key={comment.id}>
                 <CommentHeader>
-                    <Avatar name={comment.userName} avatar={comment.userAvatar} size="medium" />
+                    <Avatar
+                        name={comment.author.name}
+                        avatar={comment.author.avatar}
+                        size="medium"
+                    />
                     <CommentInfo>
-                        <UserName>{comment.userName}</UserName>
+                        <UserName>
+                            {comment.author.name}
+                            {comment.author.verified && (
+                                <Ionicons
+                                    name="checkmark-circle"
+                                    size={14}
+                                    color={theme.colors.primary}
+                                    style={{ marginLeft: 4 }}
+                                />
+                            )}
+                        </UserName>
                         <TimeText>
-                            {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: ptBR })}
+                            {formatDistanceToNow(new Date(comment.createdAt), {
+                                addSuffix: true,
+                                locale: ptBR
+                            })}
                         </TimeText>
                     </CommentInfo>
-                    {isOwner && (
-                        <TouchableOpacity onPress={() => handleDelete(comment)}>
-                            <Ionicons name="trash-outline" size={18} color={theme.colors.error} />
-                        </TouchableOpacity>
-                    )}
                 </CommentHeader>
 
                 <CommentContent>{comment.content}</CommentContent>
@@ -298,22 +221,24 @@ export default function CommentsScreen() {
                 <CommentActions>
                     <ActionButton onPress={() => handleLike(comment)}>
                         <Ionicons
-                            name={isLiked ? "heart" : "heart-outline"}
+                            name="heart-outline"
                             size={16}
-                            color={isLiked ? theme.colors.error : theme.colors.text.secondary}
+                            color={theme.colors.text.secondary}
                         />
-                        <ActionText active={isLiked}>{comment.likes}</ActionText>
+                        <ActionText>{comment.likes}</ActionText>
                     </ActionButton>
 
-                    <ActionButton onPress={() => handleReply(comment)}>
-                        <Ionicons name="arrow-undo-outline" size={16} color={theme.colors.text.secondary} />
-                        <ActionText>Responder</ActionText>
-                    </ActionButton>
+                    {comment.replies > 0 && (
+                        <ActionButton disabled>
+                            <Ionicons
+                                name="chatbubble-outline"
+                                size={16}
+                                color={theme.colors.text.secondary}
+                            />
+                            <ActionText>{comment.replies}</ActionText>
+                        </ActionButton>
+                    )}
                 </CommentActions>
-
-                {comment.replies.length > 0 && (
-                    <RepliesContainer>{comment.replies.map((reply) => renderReply(comment, reply))}</RepliesContainer>
-                )}
             </CommentContainer>
         );
     };
@@ -328,29 +253,19 @@ export default function CommentsScreen() {
             </Header>
 
             <CommentsList ref={scrollViewRef}>
-                {comments.length === 0 ? (
+                {sortedComments.length === 0 ? (
                     <EmptyState>
                         <Ionicons name="chatbubbles-outline" size={64} color={theme.colors.text.secondary} />
                         <EmptyText>Nenhum comentário ainda.{"\n"}Seja o primeiro a comentar!</EmptyText>
                     </EmptyState>
                 ) : (
-                    comments.map(renderComment)
+                    sortedComments.map(renderComment)
                 )}
             </CommentsList>
 
             <InputContainer behavior={Platform.OS === "ios" ? "padding" : "height"}>
-                {replyingTo && (
-                    <View style={{ position: "absolute", top: -40, left: 16, right: 16, backgroundColor: theme.colors.background, padding: 8, borderRadius: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                        <Text style={{ color: theme.colors.text.secondary, fontSize: 12 }}>
-                            Respondendo @{replyingTo.userName}
-                        </Text>
-                        <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                            <Ionicons name="close" size={20} color={theme.colors.text.secondary} />
-                        </TouchableOpacity>
-                    </View>
-                )}
                 <Input
-                    placeholder={replyingTo ? `Responder @${replyingTo.userName}...` : "Escreva um comentário..."}
+                    placeholder="Escreva um comentário..."
                     placeholderTextColor={theme.colors.text.secondary}
                     value={inputText}
                     onChangeText={setInputText}
