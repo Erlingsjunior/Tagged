@@ -6,6 +6,7 @@ import { mockPosts } from "../services/mockData";
 interface PostsState {
     posts: Post[];
     signatures: Map<string, Signature[]>; // postId -> array of signatures
+    baseSupports: Map<string, number>; // postId -> initial supports from mock
     savedPosts: Set<string>;
     loading: boolean;
     error: string | null;
@@ -22,6 +23,7 @@ interface PostsState {
     isPostSaved: (postId: string) => boolean;
     getSignatures: (postId: string) => Signature[];
     getPostsByImpact: () => Post[];
+    updatePostMilestones: (post: Post) => Post; // Nova função para recalcular milestones
 }
 
 const STORAGE_KEYS = {
@@ -29,23 +31,87 @@ const STORAGE_KEYS = {
     SIGNATURES: "tagged_signatures",
     SAVED: "tagged_saved_posts",
     ANONYMOUS_OWNERSHIP: "tagged_anonymous_ownership",
+    BASE_SUPPORTS: "tagged_base_supports",
 };
+
+// Achievement tiers definition (mesmos do mockData)
+const ACHIEVEMENT_TIERS = [
+    { target: 100, label: "100", badgeName: "Primeira Voz", description: "Primeiras 100 pessoas se manifestaram", icon: "megaphone", color: "#10B981" },
+    { target: 500, label: "500", badgeName: "Ecos da Comunidade", description: "A comunidade começou a ouvir", icon: "people", color: "#3B82F6" },
+    { target: 1000, label: "1K", badgeName: "Causa em Alta", description: "1 mil vozes unidas pela justiça", icon: "trending-up", color: "#8B5CF6" },
+    { target: 5000, label: "5K", badgeName: "Denunciador Profissional", description: "Impacto significativo na região", icon: "shield-checkmark", color: "#EC4899" },
+    { target: 10000, label: "10K", badgeName: "Voz da Cidade", description: "Toda a cidade está atenta", icon: "business", color: "#F59E0B" },
+    { target: 50000, label: "50K", badgeName: "Movimento Regional", description: "Mobilização em todo o estado", icon: "flame", color: "#EF4444" },
+    { target: 100000, label: "100K", badgeName: "Impacto Nacional", description: "O país inteiro está discutindo", icon: "flag", color: "#DC2626" },
+    { target: 500000, label: "500K", badgeName: "Engajando pela Paz", description: "Meio milhão por um futuro melhor", icon: "heart", color: "#DB2777" },
+    { target: 1000000, label: "1M", badgeName: "Mudando o Mundo", description: "1 milhão de pessoas querem mudança", icon: "globe", color: "#7C3AED" },
+    { target: 5000000, label: "5M", badgeName: "Revolução Social", description: "Transformação em escala massiva", icon: "flash", color: "#2563EB" },
+    { target: 10000000, label: "10M", badgeName: "Fenômeno Viral", description: "Impossível de ser ignorado", icon: "rocket", color: "#0891B2" },
+    { target: 25000000, label: "25M", badgeName: "Clamor Popular", description: "A voz do povo não se cala", icon: "thunderstorm", color: "#059669" },
+    { target: 50000000, label: "50M+", badgeName: "Engajamento Mundial", description: "O mundo inteiro se uniu por essa causa", icon: "earth", color: "#D97706" },
+];
 
 export const usePostsStore = create<PostsState>((set, get) => ({
     posts: [],
     signatures: new Map(),
+    baseSupports: new Map(),
     savedPosts: new Set(),
     loading: false,
     error: null,
+
+    updatePostMilestones: (post: Post): Post => {
+        const currentSupports = post.stats.supports;
+
+        // Recalcular milestones baseado no supports ATUAL
+        const updatedMilestones = ACHIEVEMENT_TIERS.map((tier, index) => ({
+            id: `milestone_${post.id}_${index}`,
+            target: tier.target,
+            label: tier.label,
+            badgeName: tier.badgeName,
+            badgeDescription: tier.description,
+            achieved: currentSupports >= tier.target,
+            achievedAt: currentSupports >= tier.target ? new Date().toISOString() : undefined,
+            icon: tier.icon,
+            color: currentSupports >= tier.target ? tier.color : "#94A3B8",
+        }));
+
+        // Recalcular chatUnlocked baseado no supports ATUAL (>= 1000)
+        const chatUnlocked = currentSupports >= 1000;
+
+        return {
+            ...post,
+            milestones: updatedMilestones,
+            chatUnlocked, // Atualizar dinamicamente
+        };
+    },
 
     loadPosts: async () => {
         try {
             set({ loading: true, error: null });
 
-            const [storedPosts, storedSignatures, storedSaved] = await Promise.all([
+            // MIGRATION: Check if we need to clear old data
+            const migrationKey = "tagged_migration_v4";
+            const migrationDone = await AsyncStorage.getItem(migrationKey);
+
+            if (!migrationDone) {
+                console.log("🔄 Running migration v4: clearing old data and regenerating with new distribution...");
+                await AsyncStorage.multiRemove([
+                    STORAGE_KEYS.POSTS,
+                    STORAGE_KEYS.SIGNATURES,
+                    STORAGE_KEYS.SAVED,
+                    STORAGE_KEYS.BASE_SUPPORTS,
+                    "tagged_migration_v2",
+                    "tagged_migration_v3",
+                ]);
+                await AsyncStorage.setItem(migrationKey, "done");
+                console.log("✅ Migration v4 completed!");
+            }
+
+            const [storedPosts, storedSignatures, storedSaved, storedBaseSupports] = await Promise.all([
                 AsyncStorage.getItem(STORAGE_KEYS.POSTS),
                 AsyncStorage.getItem(STORAGE_KEYS.SIGNATURES),
                 AsyncStorage.getItem(STORAGE_KEYS.SAVED),
+                AsyncStorage.getItem(STORAGE_KEYS.BASE_SUPPORTS),
             ]);
 
             let posts = storedPosts ? JSON.parse(storedPosts) : mockPosts;
@@ -53,36 +119,63 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             const signatures = new Map<string, Signature[]>(Object.entries(signaturesData));
             const savedPosts = storedSaved ? new Set<string>(JSON.parse(storedSaved)) : new Set<string>();
 
-            // Check if stored posts have required fields, if not reload with mockPosts
+            // Load or create baseSupports
+            let baseSupportsData: Record<string, number> = storedBaseSupports ? JSON.parse(storedBaseSupports) : {};
+
+            if (Object.keys(baseSupportsData).length === 0) {
+                posts.forEach((post: Post) => {
+                    baseSupportsData[post.id] = post.stats.supports;
+                });
+                await AsyncStorage.setItem(STORAGE_KEYS.BASE_SUPPORTS, JSON.stringify(baseSupportsData));
+            }
+
+            const baseSupports = new Map<string, number>(Object.entries(baseSupportsData));
+
+            // Check if stored posts have required fields
             if (storedPosts) {
                 const firstPost = posts[0];
                 if (!firstPost || !firstPost.milestones || !firstPost.evidenceFiles || !firstPost.updates) {
                     console.log("⚠️ Stored posts missing required fields, reloading with fresh mock data...");
                     posts = mockPosts;
-                    await AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(mockPosts));
+
+                    // Reset baseSupports
+                    baseSupportsData = {};
+                    posts.forEach((post: Post) => {
+                        baseSupportsData[post.id] = post.stats.supports;
+                    });
+                    await AsyncStorage.setItem(STORAGE_KEYS.BASE_SUPPORTS, JSON.stringify(baseSupportsData));
+                    baseSupports.clear();
+                    Object.entries(baseSupportsData).forEach(([key, value]) => baseSupports.set(key, value));
                 }
             }
 
-            // Save mock data if first time
-            if (!storedPosts) {
-                await AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(mockPosts));
-            }
-
-            // Update posts with current signature count
+            // Calculate current supports and update milestones dynamically
             const postsWithStats = posts.map((post: Post) => {
                 const postSigs = signatures.get(post.id);
-                return {
+                const signaturesCount = postSigs ? postSigs.length : 0;
+                const baseSupportsValue = baseSupports.get(post.id) || post.stats.supports;
+
+                const postWithUpdatedStats = {
                     ...post,
                     stats: {
                         ...post.stats,
-                        supports: postSigs ? postSigs.length : post.stats.supports,
+                        supports: baseSupportsValue + signaturesCount, // SOMA base + assinaturas
                     },
                 };
+
+                // Recalcular milestones baseado no supports atual
+                return get().updatePostMilestones(postWithUpdatedStats);
             });
+
+            // Save posts if first time
+            if (!storedPosts) {
+                await AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(postsWithStats));
+            }
 
             set({
                 posts: postsWithStats,
                 signatures,
+                baseSupports,
                 savedPosts,
                 loading: false,
             });
@@ -98,7 +191,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     },
 
     toggleSignature: async (postId: string, userId: string, userName: string, userAvatar?: string) => {
-        const { signatures, posts } = get();
+        const { signatures, posts, baseSupports } = get();
         const postSignatures = signatures.get(postId) || [];
 
         // Check if user already signed
@@ -122,18 +215,23 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         const updatedSignaturesMap = new Map(signatures);
         updatedSignaturesMap.set(postId, newSignatures);
 
-        // Update posts stats
-        const updatedPosts = posts.map((post) =>
-            post.id === postId
-                ? {
-                      ...post,
-                      stats: {
-                          ...post.stats,
-                          supports: newSignatures.length,
-                      },
-                  }
-                : post
-        );
+        // Update posts stats - SOMA base + assinaturas reais
+        const updatedPosts = posts.map((post) => {
+            if (post.id === postId) {
+                const baseSupportsValue = baseSupports.get(postId) || 0;
+                const postWithUpdatedStats = {
+                    ...post,
+                    stats: {
+                        ...post.stats,
+                        supports: baseSupportsValue + newSignatures.length, // SOMA base + assinaturas
+                    },
+                };
+
+                // Recalcular milestones dinamicamente
+                return get().updatePostMilestones(postWithUpdatedStats);
+            }
+            return post;
+        });
 
         set({
             signatures: updatedSignaturesMap,
@@ -179,7 +277,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     },
 
     addPost: async (post: Post, authorId: string, isAnonymous: boolean) => {
-        const { posts } = get();
+        const { posts, baseSupports } = get();
 
         const newPost: Post = {
             ...post,
@@ -196,11 +294,21 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             },
         };
 
-        const newPosts = [newPost, ...posts];
-        set({ posts: newPosts });
+        // Add base supports for new post
+        const updatedBaseSupports = new Map(baseSupports);
+        updatedBaseSupports.set(newPost.id, 0);
+
+        // Recalcular milestones para o novo post
+        const newPostWithMilestones = get().updatePostMilestones(newPost);
+        const newPosts = [newPostWithMilestones, ...posts];
+
+        set({ posts: newPosts, baseSupports: updatedBaseSupports });
 
         try {
-            await AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(newPosts));
+            await Promise.all([
+                AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(newPosts)),
+                AsyncStorage.setItem(STORAGE_KEYS.BASE_SUPPORTS, JSON.stringify(Object.fromEntries(updatedBaseSupports))),
+            ]);
 
             // If anonymous, store the real author relationship privately
             if (isAnonymous) {
