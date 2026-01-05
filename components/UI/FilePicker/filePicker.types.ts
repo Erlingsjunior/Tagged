@@ -7,15 +7,6 @@ export interface FileItem {
     mimeType?: string;
 }
 
-export interface FilePickerProps {
-    files: FileItem[];
-    onFilesChange: (files: FileItem[]) => void;
-    maxFiles?: number;
-    allowedTypes?: ("image" | "video" | "document" | "audio")[];
-    title?: string;
-    subtitle?: string;
-}
-
 export interface FilePickerFile {
     id: string;
     name: string;
@@ -26,14 +17,17 @@ export interface FilePickerFile {
 }
 
 export interface FilePickerProps {
+    files: FileItem[];
+    onFilesChange: (files: FileItem[]) => void;
     maxFiles?: number;
-    allowedTypes?: FileItem["type"][];
+    allowedTypes?: ("image" | "video" | "document" | "audio")[];
     maxFileSize?: number; // em MB
-    onFilesChange: (Files: FileItem[]) => void;
     initialFiles?: FilePickerFile[];
     disabled?: boolean;
     errorMessage?: string;
     placeholder?: string;
+    title?: string;
+    subtitle?: string;
 }
 
 export interface FilePickerState {
