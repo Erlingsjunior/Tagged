@@ -97,7 +97,7 @@ export default function LoginScreen() {
         <Container>
             <Content behavior={Platform.OS === "ios" ? "padding" : "height"}>
                 <Logo>Tagged</Logo>
-                <Tagline>Defend a voz e a verdade no mundo todo</Tagline>
+                <Tagline>Nossa voz, sua força, muda tudo.</Tagline>
 
                 <Input
                     placeholder="Email"

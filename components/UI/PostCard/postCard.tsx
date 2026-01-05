@@ -5,7 +5,8 @@ import { Post } from "../../../types";
 import { theme } from "../../../constants/Theme";
 import styled from "styled-components/native";
 import { CategoryBadge } from "../CategoryBadge";
-import { formatNumber, getTimeAgo, truncateText } from "../../../utils/formatters";
+import { formatNumber, getTimeAgo, truncateText, getFileIcon, formatFileSize } from "../../../utils/formatters";
+import { ProgressBar } from "../ProgressBar";
 
 interface PostCardProps {
     post: Post;
@@ -14,6 +15,7 @@ interface PostCardProps {
     onComment: (postId: string) => void;
     onShare: (postId: string) => void;
     onPress?: (postId: string) => void;
+    onChat?: (post: Post) => void;
     isLiked?: boolean;
     isSaved?: boolean;
 }
@@ -246,6 +248,106 @@ const PreviewStatLabel = styled(Text)`
     margin-top: 4px;
 `;
 
+const PreviewSection = styled(View)`
+    margin-top: ${theme.spacing.lg}px;
+    padding-top: ${theme.spacing.lg}px;
+    border-top-width: 1px;
+    border-top-color: ${theme.colors.border};
+`;
+
+const PreviewSectionTitle = styled(Text)`
+    font-size: 16px;
+    font-weight: bold;
+    color: ${theme.colors.text.primary};
+    margin-bottom: ${theme.spacing.md}px;
+`;
+
+const PreviewMilestonesRow = styled(View)`
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: ${theme.spacing.sm}px;
+`;
+
+const PreviewMilestoneItem = styled(View)<{ achieved: boolean }>`
+    align-items: center;
+    width: 18%;
+    margin-bottom: ${theme.spacing.sm}px;
+    opacity: ${(props: { achieved: boolean }) => (props.achieved ? 1 : 0.4)};
+`;
+
+const PreviewMilestoneIcon = styled(View)<{ color: string }>`
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background-color: ${(props: { color: string }) => props.color}20;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: ${theme.spacing.xs}px;
+`;
+
+const PreviewMilestoneLabel = styled(Text)`
+    font-size: 9px;
+    font-weight: 600;
+    color: ${theme.colors.text.secondary};
+    text-align: center;
+`;
+
+const PreviewEvidenceGrid = styled(View)`
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: ${theme.spacing.xs}px;
+`;
+
+const PreviewEvidenceItem = styled(TouchableOpacity)`
+    width: 48%;
+    aspect-ratio: 1.5;
+    border-radius: ${theme.borderRadius.sm}px;
+    overflow: hidden;
+    background-color: ${theme.colors.border};
+    position: relative;
+`;
+
+const PreviewEvidenceImage = styled(Image)`
+    width: 100%;
+    height: 100%;
+`;
+
+const PreviewEvidenceTypeIcon = styled(View)`
+    position: absolute;
+    top: ${theme.spacing.xs}px;
+    right: ${theme.spacing.xs}px;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 4px;
+    border-radius: ${theme.borderRadius.xl}px;
+`;
+
+const PreviewEvidenceName = styled(Text)`
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: ${theme.spacing.xs}px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: ${theme.colors.surface};
+    font-size: 9px;
+`;
+
+const PreviewEvidenceInfo = styled(View)`
+    position: absolute;
+    bottom: 16px;
+    left: 0;
+    right: 0;
+    padding: 2px ${theme.spacing.xs}px;
+    background-color: rgba(0, 0, 0, 0.6);
+`;
+
+const PreviewEvidenceInfoText = styled(Text)`
+    color: ${theme.colors.surface};
+    font-size: 8px;
+    opacity: 0.95;
+`;
+
 export const PostCard: React.FC<PostCardProps> = ({
     post,
     onLike,
@@ -253,6 +355,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     onComment,
     onShare,
     onPress,
+    onChat,
     isLiked = false,
     isSaved = false,
 }) => {
@@ -334,13 +437,24 @@ export const PostCard: React.FC<PostCardProps> = ({
                                 {post.location.city}, {post.location.state} • {getTimeAgo(post.createdAt)}
                             </PostMeta>
                         </UserInfo>
-                        <TouchableOpacity onPress={() => onSave(post.id)}>
-                            <Ionicons
-                                name={isSaved ? "bookmark" : "bookmark-outline"}
-                                size={22}
-                                color={isSaved ? theme.colors.primary : theme.colors.text.secondary}
-                            />
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                            {!post.isAnonymous && onChat && (
+                                <TouchableOpacity onPress={() => onChat(post)}>
+                                    <Ionicons
+                                        name="chatbubble"
+                                        size={22}
+                                        color={theme.colors.primary}
+                                    />
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity onPress={() => onSave(post.id)}>
+                                <Ionicons
+                                    name={isSaved ? "bookmark" : "bookmark-outline"}
+                                    size={22}
+                                    color={isSaved ? theme.colors.primary : theme.colors.text.secondary}
+                                />
+                            </TouchableOpacity>
+                        </View>
                     </Header>
 
                     {/* Title & Description */}
@@ -444,6 +558,90 @@ export const PostCard: React.FC<PostCardProps> = ({
                                         <PreviewStatLabel>Compartilhamentos</PreviewStatLabel>
                                     </PreviewStatItem>
                                 </PreviewStats>
+
+                                {/* Milestones / Achievements Preview */}
+                                {post.milestones && post.milestones.length > 0 && (
+                                    <PreviewSection>
+                                        <PreviewSectionTitle>Conquistas</PreviewSectionTitle>
+                                        <View style={{ marginBottom: theme.spacing.sm }}>
+                                            <ProgressBar
+                                                percentage={
+                                                    (() => {
+                                                        const currentSupports = post.stats.supports;
+                                                        const achievedMilestones = post.milestones.filter((m) => m.achieved);
+                                                        const nextMilestone = post.milestones.find((m) => !m.achieved);
+                                                        const previousMilestone = achievedMilestones[achievedMilestones.length - 1];
+                                                        const progressStart = previousMilestone ? previousMilestone.target : 0;
+                                                        const progressEnd = nextMilestone ? nextMilestone.target : post.milestones[post.milestones.length - 1].target;
+                                                        const progressCurrent = currentSupports - progressStart;
+                                                        const progressTotal = progressEnd - progressStart;
+                                                        return progressTotal > 0 ? Math.min((progressCurrent / progressTotal) * 100, 100) : 0;
+                                                    })()
+                                                }
+                                            />
+                                        </View>
+                                        <PreviewMilestonesRow>
+                                            {post.milestones.slice(0, 5).map((milestone) => (
+                                                <PreviewMilestoneItem key={milestone.id} achieved={milestone.achieved}>
+                                                    <PreviewMilestoneIcon color={milestone.color}>
+                                                        <Ionicons
+                                                            name={milestone.icon as any}
+                                                            size={18}
+                                                            color={milestone.achieved ? milestone.color : theme.colors.text.secondary}
+                                                        />
+                                                    </PreviewMilestoneIcon>
+                                                    <PreviewMilestoneLabel>{milestone.label}</PreviewMilestoneLabel>
+                                                </PreviewMilestoneItem>
+                                            ))}
+                                        </PreviewMilestonesRow>
+                                    </PreviewSection>
+                                )}
+
+                                {/* Evidence Files Preview */}
+                                {post.evidenceFiles && post.evidenceFiles.length > 0 && (
+                                    <PreviewSection>
+                                        <PreviewSectionTitle>Evidências ({post.evidenceFiles.length})</PreviewSectionTitle>
+                                        <PreviewEvidenceGrid>
+                                            {post.evidenceFiles.slice(0, 4).map((file) => (
+                                                <PreviewEvidenceItem key={file.id}>
+                                                    {file.type === "image" || file.type === "video" ? (
+                                                        <PreviewEvidenceImage source={{ uri: file.thumbnail || file.url }} resizeMode="cover" />
+                                                    ) : (
+                                                        <View
+                                                            style={{
+                                                                flex: 1,
+                                                                justifyContent: "center",
+                                                                alignItems: "center",
+                                                                backgroundColor: theme.colors.border,
+                                                            }}
+                                                        >
+                                                            <Ionicons name={getFileIcon(file.type) as any} size={36} color={theme.colors.text.secondary} />
+                                                        </View>
+                                                    )}
+                                                    <PreviewEvidenceTypeIcon>
+                                                        <Ionicons name={getFileIcon(file.type) as any} size={12} color={theme.colors.surface} />
+                                                    </PreviewEvidenceTypeIcon>
+                                                    <PreviewEvidenceInfo>
+                                                        <PreviewEvidenceInfoText>
+                                                            {formatFileSize(file.size)}
+                                                        </PreviewEvidenceInfoText>
+                                                    </PreviewEvidenceInfo>
+                                                    <PreviewEvidenceName numberOfLines={1}>{file.name}</PreviewEvidenceName>
+                                                </PreviewEvidenceItem>
+                                            ))}
+                                        </PreviewEvidenceGrid>
+                                        {post.evidenceFiles.length > 4 && (
+                                            <Text style={{
+                                                fontSize: 12,
+                                                color: theme.colors.text.secondary,
+                                                textAlign: 'center',
+                                                marginTop: theme.spacing.sm
+                                            }}>
+                                                +{post.evidenceFiles.length - 4} mais
+                                            </Text>
+                                        )}
+                                    </PreviewSection>
+                                )}
 
                                 <TouchableOpacity
                                     onPress={handleOpenDetails}

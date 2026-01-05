@@ -2,6 +2,7 @@ import React from "react";
 import { ScrollView, Text, TouchableOpacity, View, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import styled from "styled-components/native";
 import { useAuthStore } from "../../stores/authStore";
 import { theme } from "../../constants/Theme";
@@ -97,9 +98,28 @@ const MenuItem = styled(TouchableOpacity)`
     border-bottom-color: ${theme.colors.border};
 `;
 
+const MenuItemLeft = styled(View)`
+    flex-direction: row;
+    align-items: center;
+    flex: 1;
+`;
+
 const MenuItemText = styled(Text)`
     font-size: 16px;
     color: ${theme.colors.text.primary};
+    margin-left: ${theme.spacing.sm}px;
+`;
+
+const MenuItemBadge = styled(View)`
+    background-color: ${theme.colors.primary};
+    padding: 4px 8px;
+    border-radius: ${theme.borderRadius.sm}px;
+`;
+
+const MenuItemBadgeText = styled(Text)`
+    font-size: 10px;
+    font-weight: bold;
+    color: ${theme.colors.surface};
 `;
 
 const LogoutButton = styled(TouchableOpacity)`
@@ -186,14 +206,32 @@ export default function ProfileScreen() {
 
                 <Section>
                     <SectionTitle>Configurações</SectionTitle>
-                    <MenuItem>
-                        <MenuItemText>Editar Perfil</MenuItemText>
+                    <MenuItem onPress={() => router.push("/spreadTagged")}>
+                        <MenuItemLeft>
+                            <Ionicons name="share-social" size={20} color={theme.colors.primary} />
+                            <MenuItemText>Espalhar Tagged</MenuItemText>
+                        </MenuItemLeft>
+                        <MenuItemBadge>
+                            <MenuItemBadgeText>P2P</MenuItemBadgeText>
+                        </MenuItemBadge>
                     </MenuItem>
                     <MenuItem>
-                        <MenuItemText>Notificações</MenuItemText>
+                        <MenuItemLeft>
+                            <Ionicons name="person" size={20} color={theme.colors.text.secondary} />
+                            <MenuItemText>Editar Perfil</MenuItemText>
+                        </MenuItemLeft>
                     </MenuItem>
                     <MenuItem>
-                        <MenuItemText>Privacidade</MenuItemText>
+                        <MenuItemLeft>
+                            <Ionicons name="notifications" size={20} color={theme.colors.text.secondary} />
+                            <MenuItemText>Notificações</MenuItemText>
+                        </MenuItemLeft>
+                    </MenuItem>
+                    <MenuItem>
+                        <MenuItemLeft>
+                            <Ionicons name="lock-closed" size={20} color={theme.colors.text.secondary} />
+                            <MenuItemText>Privacidade</MenuItemText>
+                        </MenuItemLeft>
                     </MenuItem>
                 </Section>
 

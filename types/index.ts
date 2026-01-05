@@ -95,6 +95,7 @@ export const PostSchema = z.object({
     updatedAt: z.string(),
     isLiked: z.boolean().default(false),
     isSaved: z.boolean().default(false),
+    isAnonymous: z.boolean().default(false),
     evidenceFiles: z.array(EvidenceFileSchema).default([]),
     milestones: z.array(MilestoneSchema).default([]),
     updates: z.array(ReportUpdateSchema).default([]),

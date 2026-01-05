@@ -13,7 +13,7 @@ import { StatBox } from "../../components/UI/StatBox";
 import { ProgressBar } from "../../components/UI/ProgressBar";
 import { StatusTag } from "../../components/UI/StatusTag";
 import { CommentItem } from "../../components/UI/CommentItem";
-import { formatNumber, getTimeAgo, getFileIcon } from "../../utils/formatters";
+import { formatNumber, getTimeAgo, getFileIcon, formatFileSize } from "../../utils/formatters";
 
 const Container = styled(SafeAreaView)`
     flex: 1;
@@ -293,6 +293,21 @@ const EvidenceName = styled(Text)`
     font-size: 11px;
 `;
 
+const EvidenceInfo = styled(View)`
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    padding: ${theme.spacing.xs}px ${theme.spacing.sm}px;
+    background-color: rgba(0, 0, 0, 0.6);
+`;
+
+const EvidenceInfoText = styled(Text)`
+    color: ${theme.colors.surface};
+    font-size: 9px;
+    opacity: 0.95;
+`;
+
 // Comments Section
 const CommentsSection = styled(View)`
     padding: ${theme.spacing.lg}px;
@@ -399,15 +414,16 @@ export default function PostDetailsScreen() {
 
     // Calculate progress
     const currentSupports = post.stats.supports;
-    const achievedMilestones = post.milestones.filter((m) => m.achieved);
-    const nextMilestone = post.milestones.find((m) => !m.achieved);
+    const milestones = post.milestones || [];
+    const achievedMilestones = milestones.filter((m) => m.achieved);
+    const nextMilestone = milestones.find((m) => !m.achieved);
     const previousMilestone = achievedMilestones[achievedMilestones.length - 1];
 
     const progressStart = previousMilestone ? previousMilestone.target : 0;
-    const progressEnd = nextMilestone ? nextMilestone.target : post.milestones[post.milestones.length - 1].target;
+    const progressEnd = nextMilestone ? nextMilestone.target : milestones.length > 0 ? milestones[milestones.length - 1].target : 1000;
     const progressCurrent = currentSupports - progressStart;
     const progressTotal = progressEnd - progressStart;
-    const progressPercentage = Math.min((progressCurrent / progressTotal) * 100, 100);
+    const progressPercentage = progressTotal > 0 ? Math.min((progressCurrent / progressTotal) * 100, 100) : 0;
 
     const handleSign = () => {
         if (!user) return;
@@ -467,89 +483,51 @@ export default function PostDetailsScreen() {
                 </StatsSection>
 
                 {/* Milestones / Achievements */}
-                <MilestoneSection>
-                    <SectionTitle>Conquistas e Metas</SectionTitle>
-                    <ProgressBarContainer>
-                        <ProgressBarFill width={`${progressPercentage}%`} />
-                    </ProgressBarContainer>
-                    <MilestonesRow>
-                        {post.milestones.map((milestone) => (
-                            <MilestoneItem key={milestone.id} achieved={milestone.achieved}>
-                                <MilestoneIcon color={milestone.color}>
-                                    <Ionicons
-                                        name={milestone.icon as any}
-                                        size={24}
-                                        color={milestone.achieved ? milestone.color : theme.colors.text.secondary}
-                                    />
-                                </MilestoneIcon>
-                                <MilestoneLabel>{milestone.label}</MilestoneLabel>
-                            </MilestoneItem>
-                        ))}
-                    </MilestonesRow>
-                    {nextMilestone && (
-                        <NextGoalText>
-                            Próxima meta: {formatNumber(nextMilestone.target)} assinaturas (faltam {formatNumber(nextMilestone.target - currentSupports)})
-                        </NextGoalText>
-                    )}
-                </MilestoneSection>
+                {milestones.length > 0 && (
+                    <MilestoneSection>
+                        <SectionTitle>Conquistas e Metas</SectionTitle>
+                        <View style={{ marginBottom: theme.spacing.md }}>
+                            <ProgressBar percentage={progressPercentage} />
+                        </View>
+                        <MilestonesRow>
+                            {milestones.map((milestone) => (
+                                <MilestoneItem key={milestone.id} achieved={milestone.achieved}>
+                                    <MilestoneIcon color={milestone.color}>
+                                        <Ionicons
+                                            name={milestone.icon as any}
+                                            size={24}
+                                            color={milestone.achieved ? milestone.color : theme.colors.text.secondary}
+                                        />
+                                    </MilestoneIcon>
+                                    <MilestoneLabel>{milestone.label}</MilestoneLabel>
+                                </MilestoneItem>
+                            ))}
+                        </MilestonesRow>
+                        {nextMilestone && (
+                            <NextGoalText>
+                                Próxima meta: {formatNumber(nextMilestone.target)} assinaturas (faltam {formatNumber(nextMilestone.target - currentSupports)})
+                            </NextGoalText>
+                        )}
+                    </MilestoneSection>
+                )}
 
                 {/* Status Tags */}
-                <StatusTagsSection>
-                    <SectionTitle>Status da Denúncia</SectionTitle>
-                    <StatusTagsRow>
-                        <StatusTag active={post.actionStatus.investigating}>
-                            <Ionicons
-                                name="search"
-                                size={16}
-                                color={post.actionStatus.investigating ? theme.colors.primary : theme.colors.text.secondary}
-                            />
-                            <StatusTagText active={post.actionStatus.investigating}>Em Investigação</StatusTagText>
-                        </StatusTag>
-                        <StatusTag active={post.actionStatus.hasLawyers}>
-                            <Ionicons
-                                name="briefcase"
-                                size={16}
-                                color={post.actionStatus.hasLawyers ? theme.colors.primary : theme.colors.text.secondary}
-                            />
-                            <StatusTagText active={post.actionStatus.hasLawyers}>Advogados Atuando</StatusTagText>
-                        </StatusTag>
-                        <StatusTag active={post.actionStatus.hasNGO}>
-                            <Ionicons
-                                name="people"
-                                size={16}
-                                color={post.actionStatus.hasNGO ? theme.colors.primary : theme.colors.text.secondary}
-                            />
-                            <StatusTagText active={post.actionStatus.hasNGO}>ONGs Envolvidas</StatusTagText>
-                        </StatusTag>
-                        <StatusTag active={post.actionStatus.legalAction}>
-                            <Ionicons
-                                name="hammer"
-                                size={16}
-                                color={post.actionStatus.legalAction ? theme.colors.primary : theme.colors.text.secondary}
-                            />
-                            <StatusTagText active={post.actionStatus.legalAction}>Ação Judicial</StatusTagText>
-                        </StatusTag>
-                        <StatusTag active={post.actionStatus.governmentAction}>
-                            <Ionicons
-                                name="shield"
-                                size={16}
-                                color={post.actionStatus.governmentAction ? theme.colors.primary : theme.colors.text.secondary}
-                            />
-                            <StatusTagText active={post.actionStatus.governmentAction}>Governo Atuando</StatusTagText>
-                        </StatusTag>
-                        <StatusTag active={post.actionStatus.executing}>
-                            <Ionicons
-                                name="checkmark-circle"
-                                size={16}
-                                color={post.actionStatus.executing ? theme.colors.primary : theme.colors.text.secondary}
-                            />
-                            <StatusTagText active={post.actionStatus.executing}>Em Execução</StatusTagText>
-                        </StatusTag>
-                    </StatusTagsRow>
-                </StatusTagsSection>
+                {post.actionStatus && (
+                    <StatusTagsSection>
+                        <SectionTitle>Status da Denúncia</SectionTitle>
+                        <StatusTagsRow>
+                            <StatusTag label="Em Investigação" icon="search" active={post.actionStatus.investigating || false} />
+                            <StatusTag label="Advogados Atuando" icon="briefcase" active={post.actionStatus.hasLawyers || false} />
+                            <StatusTag label="ONGs Envolvidas" icon="people" active={post.actionStatus.hasNGO || false} />
+                            <StatusTag label="Ação Judicial" icon="hammer" active={post.actionStatus.legalAction || false} />
+                            <StatusTag label="Governo Atuando" icon="shield" active={post.actionStatus.governmentAction || false} />
+                            <StatusTag label="Em Execução" icon="checkmark-circle" active={post.actionStatus.executing || false} />
+                        </StatusTagsRow>
+                    </StatusTagsSection>
+                )}
 
                 {/* Updates/News */}
-                {post.updates.length > 0 && (
+                {post.updates && post.updates.length > 0 && (
                     <UpdatesSection>
                         <SectionTitle>Atualizações do Caso</SectionTitle>
                         {post.updates.map((update) => (
@@ -582,7 +560,7 @@ export default function PostDetailsScreen() {
                 )}
 
                 {/* Evidence Files */}
-                {post.evidenceFiles.length > 0 && (
+                {post.evidenceFiles && post.evidenceFiles.length > 0 && (
                     <EvidenceSection>
                         <SectionTitle>Arquivos de Evidência ({post.evidenceFiles.length})</SectionTitle>
                         <EvidenceGrid>
@@ -605,6 +583,11 @@ export default function PostDetailsScreen() {
                                     <EvidenceTypeIcon>
                                         <Ionicons name={getFileIcon(file.type) as any} size={16} color={theme.colors.surface} />
                                     </EvidenceTypeIcon>
+                                    <EvidenceInfo>
+                                        <EvidenceInfoText>
+                                            {formatFileSize(file.size)} • {getTimeAgo(file.uploadedAt)}
+                                        </EvidenceInfoText>
+                                    </EvidenceInfo>
                                     <EvidenceName numberOfLines={1}>{file.name}</EvidenceName>
                                 </EvidenceItem>
                             ))}
@@ -640,26 +623,11 @@ export default function PostDetailsScreen() {
                     <CommentsSection>
                         <SectionTitle>Comentários ({comments.length})</SectionTitle>
                         {displayComments.map((comment) => (
-                            <CommentItem key={comment.id}>
-                                <CommentAvatar>
-                                    <AvatarText style={{ fontSize: 14 }}>{comment.author.name.charAt(0).toUpperCase()}</AvatarText>
-                                </CommentAvatar>
-                                <CommentContent>
-                                    <CommentAuthor>{comment.author.name}</CommentAuthor>
-                                    <CommentText>{comment.content}</CommentText>
-                                    <CommentMeta>
-                                        <CommentMetaText>{getTimeAgo(comment.createdAt)}</CommentMetaText>
-                                        <CommentMetaText>{comment.likes} curtidas</CommentMetaText>
-                                        {comment.replies > 0 && <CommentMetaText>{comment.replies} respostas</CommentMetaText>}
-                                    </CommentMeta>
-                                </CommentContent>
-                            </CommentItem>
+                            <CommentItem key={comment.id} comment={comment} />
                         ))}
-                        {comments.length > 3 && !showAllComments && (
-                            <ViewAllButton onPress={() => setShowAllComments(true)}>
-                                <ViewAllText>Ver todos os {comments.length} comentários</ViewAllText>
-                            </ViewAllButton>
-                        )}
+                        <ViewAllButton onPress={() => router.push(`/comments/${id}`)}>
+                            <ViewAllText>Ver todos os {comments.length} comentários</ViewAllText>
+                        </ViewAllButton>
                     </CommentsSection>
                 )}
             </Content>
@@ -675,6 +643,10 @@ export default function PostDetailsScreen() {
                     <ActionButtonText variant={userHasSigned ? "secondary" : "primary"}>
                         {userHasSigned ? "Assinado" : "Assinar Petição"}
                     </ActionButtonText>
+                </ActionButton>
+                <ActionButton variant="secondary" onPress={() => router.push(`/comments/${id}`)}>
+                    <Ionicons name="chatbubble-outline" size={20} color={theme.colors.text.primary} />
+                    <ActionButtonText variant="secondary">Comentar</ActionButtonText>
                 </ActionButton>
                 <ActionButton variant="secondary" onPress={() => console.log("Compartilhar")}>
                     <Ionicons name="share-outline" size={20} color={theme.colors.text.primary} />

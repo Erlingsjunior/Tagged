@@ -137,7 +137,7 @@ export default function RegisterScreen() {
             <Content behavior={Platform.OS === "ios" ? "padding" : "height"}>
                 <ScrollContent showsVerticalScrollIndicator={false}>
                     <Logo>Tagged</Logo>
-                    <Tagline>Junte-se à revolução da transparência</Tagline>
+                    <Tagline>Nossa voz, sua força, muda tudo.</Tagline>
 
                     <Input
                         placeholder="Nome completo"

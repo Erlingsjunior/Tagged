@@ -4,10 +4,17 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { LogBox } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuthStore } from '@/stores/authStore';
+
+// Suprimir warnings conhecidos do Reanimated durante desenvolvimento
+LogBox.ignoreLogs([
+  'Invalid prop `style` supplied to `React.Fragment`',
+  'NativeProxy'
+]);
 
 export {
   // Catch any errors thrown by the Layout component.

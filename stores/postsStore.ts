@@ -48,10 +48,20 @@ export const usePostsStore = create<PostsState>((set, get) => ({
                 AsyncStorage.getItem(STORAGE_KEYS.SAVED),
             ]);
 
-            const posts = storedPosts ? JSON.parse(storedPosts) : mockPosts;
+            let posts = storedPosts ? JSON.parse(storedPosts) : mockPosts;
             const signaturesData: Record<string, Signature[]> = storedSignatures ? JSON.parse(storedSignatures) : {};
             const signatures = new Map<string, Signature[]>(Object.entries(signaturesData));
             const savedPosts = storedSaved ? new Set<string>(JSON.parse(storedSaved)) : new Set<string>();
+
+            // Check if stored posts have required fields, if not reload with mockPosts
+            if (storedPosts) {
+                const firstPost = posts[0];
+                if (!firstPost || !firstPost.milestones || !firstPost.evidenceFiles || !firstPost.updates) {
+                    console.log("⚠️ Stored posts missing required fields, reloading with fresh mock data...");
+                    posts = mockPosts;
+                    await AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(mockPosts));
+                }
+            }
 
             // Save mock data if first time
             if (!storedPosts) {

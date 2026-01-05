@@ -86,26 +86,47 @@ const generateMockPost = (id: number): Post => {
         color: supports >= target ? "#22C55E" : "#94A3B8",
     }));
 
-    // Generate evidence files
+    // Generate evidence files - More diverse and realistic
     const evidenceFiles: EvidenceFile[] = Array.from(
-        { length: faker.number.int({ min: 2, max: 8 }) },
+        { length: faker.number.int({ min: 3, max: 12 }) },
         (_, i) => {
-            const fileTypes = ["image", "video", "document", "audio"] as const;
+            // Weighted distribution: more images, some videos, fewer documents/audio
+            const fileTypes: Array<"image" | "video" | "document" | "audio"> = [
+                "image", "image", "image", "image", // 40% images
+                "video", "video", // 20% videos
+                "document", "document", // 20% documents
+                "audio", "audio" // 20% audio
+            ];
             const fileType = faker.helpers.arrayElement(fileTypes);
+
+            const imageNames = ["foto_evidencia", "prova_visual", "flagrante", "registro_fotografico", "imagem_local"];
+            const videoNames = ["video_prova", "gravacao_testemunha", "filmagem_flagrante", "registro_video"];
+            const documentNames = ["documento_oficial", "oficio", "ata_reuniao", "contrato", "recibo", "denuncia_formal"];
+            const audioNames = ["audio_testemunha", "gravacao_telefonica", "depoimento", "entrevista"];
+
+            const getName = () => {
+                switch(fileType) {
+                    case "image": return `${faker.helpers.arrayElement(imageNames)}_${i + 1}.jpg`;
+                    case "video": return `${faker.helpers.arrayElement(videoNames)}_${i + 1}.mp4`;
+                    case "document": return `${faker.helpers.arrayElement(documentNames)}_${i + 1}.pdf`;
+                    case "audio": return `${faker.helpers.arrayElement(audioNames)}_${i + 1}.mp3`;
+                }
+            };
+
             return {
                 id: `evidence_${id}_${i}`,
                 type: fileType,
-                name: fileType === "image" ? `foto_evidencia_${i + 1}.jpg` :
-                      fileType === "video" ? `video_prova_${i + 1}.mp4` :
-                      fileType === "document" ? `documento_${i + 1}.pdf` :
-                      `audio_${i + 1}.mp3`,
-                url: fileType === "image" ? `https://picsum.photos/seed/${id}_${i}/600/400` :
+                name: getName(),
+                url: fileType === "image" ? `https://picsum.photos/seed/${id}_${i}/800/600` :
                      fileType === "video" ? `https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4` :
                      `https://example.com/file_${id}_${i}`,
-                size: faker.number.int({ min: 500000, max: 50000000 }),
+                size: fileType === "image" ? faker.number.int({ min: 500000, max: 5000000 }) :
+                      fileType === "video" ? faker.number.int({ min: 5000000, max: 100000000 }) :
+                      fileType === "document" ? faker.number.int({ min: 100000, max: 5000000 }) :
+                      faker.number.int({ min: 500000, max: 10000000 }),
                 uploadedAt: faker.date.recent({ days: 25 }).toISOString(),
                 thumbnail: fileType === "image" || fileType === "video"
-                    ? `https://picsum.photos/seed/${id}_${i}_thumb/150/150`
+                    ? `https://picsum.photos/seed/${id}_${i}_thumb/200/200`
                     : undefined,
             };
         }
@@ -113,7 +134,7 @@ const generateMockPost = (id: number): Post => {
 
     // Generate updates/news
     const updates: ReportUpdate[] = Array.from(
-        { length: faker.number.int({ min: 0, max: 5 }) },
+        { length: faker.number.int({ min: 2, max: 8 }) },
         (_, i) => ({
             id: `update_${id}_${i}`,
             title: faker.helpers.arrayElement([
