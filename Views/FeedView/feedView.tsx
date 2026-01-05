@@ -1,25 +1,34 @@
 import React, { useEffect } from "react";
 import { FlatList, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { PostCard } from "../../components/UI/PostCard";
 import { usePostsStore } from "../../stores/postsStore";
-
+import { useAuthStore } from "../../stores/authStore";
 import { theme } from "../../constants/Theme";
 
 export const FeedView: React.FC = () => {
+    const router = useRouter();
     const {
         posts,
-        likedPosts,
         savedPosts,
         loading,
         loadPosts,
-        toggleLike,
+        toggleSignature,
         toggleSave,
+        hasUserSigned,
     } = usePostsStore();
+
+    const { user } = useAuthStore();
 
     useEffect(() => {
         loadPosts();
     }, []);
+
+    const handleSignature = (postId: string) => {
+        if (!user) return;
+        toggleSignature(postId, user.id, user.name, user.avatar);
+    };
 
     const handleComment = (postId: string) => {
         console.log("Comment on post:", postId);
@@ -27,6 +36,10 @@ export const FeedView: React.FC = () => {
 
     const handleShare = (postId: string) => {
         console.log("Share post:", postId);
+    };
+
+    const handlePostPress = (postId: string) => {
+        router.push(`/postDetails/${postId}`);
     };
 
     return (
@@ -37,11 +50,12 @@ export const FeedView: React.FC = () => {
                 renderItem={({ item }) => (
                     <PostCard
                         post={item}
-                        onLike={toggleLike}
+                        onLike={handleSignature}
                         onSave={toggleSave}
                         onComment={handleComment}
                         onShare={handleShare}
-                        isLiked={likedPosts.has(item.id)}
+                        onPress={handlePostPress}
+                        isLiked={user ? hasUserSigned(item.id, user.id) : false}
                         isSaved={savedPosts.has(item.id)}
                     />
                 )}

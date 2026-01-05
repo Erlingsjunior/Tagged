@@ -27,6 +27,12 @@ import { StepperStep } from "../../components/UI/Stepper/stepper.types";
 import { Category } from "../../components/UI/CategorySelector/categorySelector.types";
 import { FilePickerFile } from "../../components/UI/FilePicker/filePicker.types";
 
+// Importando stores
+import { useAuthStore } from "../../stores/authStore";
+import { usePostsStore } from "../../stores/postsStore";
+import { useRouter } from "expo-router";
+import { Post } from "../../types";
+
 // Styled Components
 const Container = styled(SafeAreaView)`
     flex: 1;
@@ -116,6 +122,10 @@ const formSteps: StepperStep[] = [
 ];
 
 export const CreateReportView: React.FC = () => {
+    const { user } = useAuthStore();
+    const { addPost } = usePostsStore();
+    const router = useRouter();
+
     // Estados do componente
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState<CreateReportFormData>({
@@ -175,23 +185,67 @@ export const CreateReportView: React.FC = () => {
 
     // Submissão do formulário
     const submitReport = async () => {
+        if (!user) {
+            Alert.alert("Erro", "Você precisa estar logado para criar uma denúncia");
+            return;
+        }
+
         try {
-            // Aqui você faria a chamada para a API
-            console.log("Submetendo denúncia:", formData);
+            // Criar o post
+            const newPost: Post = {
+                id: "", // Será gerado pelo store
+                title: formData.title,
+                content: formData.description,
+                category: formData.category as any,
+                status: "active",
+                author: formData.isAnonymous
+                    ? {
+                          id: "tagged_platform",
+                          name: "Tagged Platform",
+                          verified: true,
+                      }
+                    : {
+                          id: user.id,
+                          name: user.name,
+                          avatar: user.avatar,
+                          verified: user.verified,
+                      },
+                location: {
+                    city: formData.location.split(",")[0]?.trim() || "Não informado",
+                    state: formData.location.split(",")[1]?.trim() || "",
+                },
+                stats: {
+                    likes: 0,
+                    shares: 0,
+                    comments: 0,
+                    supports: 0,
+                },
+                media: [],
+                tags: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                isLiked: false,
+                isSaved: false,
+            };
+
+            await addPost(newPost, user.id, formData.isAnonymous);
 
             Alert.alert(
                 "Sucesso!",
-                "Sua denúncia foi enviada com sucesso. Você receberá atualizações sobre o andamento.",
+                formData.isAnonymous
+                    ? "Sua denúncia anônima foi enviada com sucesso. A Tagged irá representá-la publicamente enquanto sua identidade permanece protegida."
+                    : "Sua denúncia foi enviada com sucesso. Você receberá atualizações sobre o andamento.",
                 [
                     {
-                        text: "OK",
+                        text: "Ver no Feed",
                         onPress: () => {
-                            /* Navegar para tela de sucesso */
+                            router.replace("/(tabs)/feed");
                         },
                     },
                 ]
             );
         } catch (error) {
+            console.error("Error submitting report:", error);
             Alert.alert(
                 "Erro",
                 "Ocorreu um erro ao enviar sua denúncia. Tente novamente."
@@ -268,13 +322,27 @@ export const CreateReportView: React.FC = () => {
                         </BoxText>
 
                         <FilePicker
+                            files={formData.evidenceFiles.map((file) => ({
+                                id: file.id,
+                                name: file.name,
+                                type: file.type as "image" | "video" | "document" | "audio",
+                                size: `${(file.size / 1024).toFixed(2)} KB`,
+                                uri: file.uri,
+                                mimeType: file.mimeType,
+                            }))}
                             maxFiles={5}
                             allowedTypes={["image", "video", "document"]}
                             maxFileSize={10}
                             onFilesChange={(files) =>
-                                updateField("evidenceFiles", files)
+                                updateField("evidenceFiles", files.map((f) => ({
+                                    id: f.id,
+                                    name: f.name,
+                                    uri: f.uri || "",
+                                    type: f.type,
+                                    size: parseFloat(f.size) || 0,
+                                    mimeType: f.mimeType,
+                                })))
                             }
-                            initialFiles={formData.evidenceFiles}
                             placeholder='Toque para adicionar evidências'
                         />
 

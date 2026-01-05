@@ -22,46 +22,40 @@ export default function TabLayout() {
         <Tabs
             screenOptions={{
                 tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-                // Disable the static render of the header on web
-                // to prevent a hydration error in React Navigation v6.
-                headerShown: useClientOnlyValue(false, true),
+                headerShown: false,
             }}
         >
             <Tabs.Screen
-                name='index'
+                name='feed'
                 options={{
-                    title: "Tab One",
+                    title: "Feed",
                     tabBarIcon: ({ color }) => (
-                        <TabBarIcon name='code' color={color} />
-                    ),
-                    headerRight: () => (
-                        <Link href='/modal' asChild>
-                            <Pressable>
-                                {({ pressed }) => (
-                                    <FontAwesome
-                                        name='info-circle'
-                                        size={25}
-                                        color={
-                                            Colors[colorScheme ?? "light"].text
-                                        }
-                                        style={{
-                                            marginRight: 15,
-                                            opacity: pressed ? 0.5 : 1,
-                                        }}
-                                    />
-                                )}
-                            </Pressable>
-                        </Link>
+                        <TabBarIcon name='home' color={color} />
                     ),
                 }}
             />
             <Tabs.Screen
                 name='createReport'
                 options={{
-                    title: "Create Report",
+                    title: "Denunciar",
                     tabBarIcon: ({ color }) => (
-                        <TabBarIcon name='code' color={color} />
+                        <TabBarIcon name='plus-circle' color={color} />
                     ),
+                }}
+            />
+            <Tabs.Screen
+                name='profile'
+                options={{
+                    title: "Perfil",
+                    tabBarIcon: ({ color }) => (
+                        <TabBarIcon name='user' color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name='index'
+                options={{
+                    href: null,
                 }}
             />
         </Tabs>
