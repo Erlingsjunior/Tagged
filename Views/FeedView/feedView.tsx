@@ -1,8 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { FlatList, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { PostCard } from "../../components/UI/PostCard";
+import { SearchBar } from "../../components/UI/SearchBar";
+import type { SearchFilters } from "../../components/UI/SearchBar";
 import { usePostsStore } from "../../stores/postsStore";
 import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
@@ -24,9 +26,95 @@ export const FeedView: React.FC = () => {
     const { user } = useAuthStore();
     const { getOrCreateConversation, canStartConversation } = useChatStore();
 
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filters, setFilters] = useState<SearchFilters>({
+        sortBy: "relevance",
+        location: "all",
+        tags: [],
+    });
+
     useEffect(() => {
         loadPosts();
     }, []);
+
+    // Filter and sort posts based on search and filters
+    const filteredPosts = useMemo(() => {
+        let result = [...posts];
+
+        // Filter by search query (title and content)
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(
+                (post) =>
+                    post.title.toLowerCase().includes(query) ||
+                    post.content.toLowerCase().includes(query) ||
+                    post.tags.some((tag) => tag.toLowerCase().includes(query))
+            );
+        }
+
+        // Filter by tags
+        if (filters.tags.length > 0) {
+            result = result.filter((post) =>
+                filters.tags.some((tag) => post.tags.includes(tag))
+            );
+        }
+
+        // Filter by location (simulated - would need user location in real app)
+        if (filters.location !== "all" && user) {
+            // For now, this is a placeholder - would need real geolocation logic
+            // result = result.filter((post) => matchesLocationFilter(post, filters.location, user));
+        }
+
+        // Sort
+        switch (filters.sortBy) {
+            case "recent":
+                result.sort(
+                    (a, b) =>
+                        new Date(b.createdAt).getTime() -
+                        new Date(a.createdAt).getTime()
+                );
+                break;
+            case "popular":
+                result.sort((a, b) => b.stats.supports - a.stats.supports);
+                break;
+            case "nearby":
+                // Sortear por proximidade (simulado - em produção usaria geolocalização real)
+                // Por enquanto, priorizamos denúncias da mesma cidade do usuário
+                if (user) {
+                    result.sort((a, b) => {
+                        // Placeholder: Em produção, calcularia distância real
+                        // Por enquanto, mantém a ordem original (pode ser expandido depois)
+                        return 0;
+                    });
+                }
+                break;
+            case "relevance":
+            default:
+                // Score baseado em múltiplos fatores:
+                // - Assinaturas (peso 3): indica engajamento massivo
+                // - Compartilhamentos (peso 2): indica alcance viral
+                // - Comentários (peso 1): indica discussão ativa
+                result.sort((a, b) => {
+                    const scoreA =
+                        a.stats.supports * 3 +
+                        a.stats.shares * 2 +
+                        a.stats.comments;
+                    const scoreB =
+                        b.stats.supports * 3 +
+                        b.stats.shares * 2 +
+                        b.stats.comments;
+                    return scoreB - scoreA;
+                });
+                break;
+        }
+
+        return result;
+    }, [posts, searchQuery, filters, user]);
+
+    const handleSearch = (query: string, newFilters: SearchFilters) => {
+        setSearchQuery(query);
+        setFilters(newFilters);
+    };
 
     const handleSignature = (postId: string) => {
         if (!user) return;
@@ -47,7 +135,10 @@ export const FeedView: React.FC = () => {
 
     const handleChat = (post: Post) => {
         if (!user) {
-            Alert.alert("Login Necessário", "Você precisa estar logado para iniciar uma conversa.");
+            Alert.alert(
+                "Login Necessário",
+                "Você precisa estar logado para iniciar uma conversa."
+            );
             return;
         }
 
@@ -61,9 +152,15 @@ export const FeedView: React.FC = () => {
         }
 
         // Check if author accepts messages (we'll assume true for now, can be extended)
-        const acceptsMessages = true; // TODO: Add this field to Post type
+        const acceptsMessages = true;
 
-        if (!canStartConversation(post.author.id, post.isAnonymous, acceptsMessages)) {
+        if (
+            !canStartConversation(
+                post.author.id,
+                post.isAnonymous,
+                acceptsMessages
+            )
+        ) {
             Alert.alert(
                 "Conversa Indisponível",
                 "Este usuário não está aceitando mensagens no momento."
@@ -85,8 +182,12 @@ export const FeedView: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <SearchBar
+                onSearch={handleSearch}
+                placeholder='Buscar denúncias, tags...'
+            />
             <FlatList
-                data={posts}
+                data={filteredPosts}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <PostCard
@@ -105,6 +206,8 @@ export const FeedView: React.FC = () => {
                 showsVerticalScrollIndicator={false}
                 refreshing={loading}
                 onRefresh={loadPosts}
+                removeClippedSubviews={false}
+                windowSize={10}
             />
         </SafeAreaView>
     );
