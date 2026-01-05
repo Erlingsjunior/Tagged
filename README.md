@@ -1,6 +1,6 @@
 # Tagged 📢
 
-> **"Sua voz, sua força, sua mudança"**
+> **"Nossa voz, sua força, muda tudo."**
 
 *"The only thing necessary for the triumph of evil is for good people to do nothing." - Edmund Burke*
 
