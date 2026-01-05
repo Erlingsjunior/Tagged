@@ -41,6 +41,8 @@ export const MilestoneSchema = z.object({
     id: z.string(),
     target: z.number(),
     label: z.string(),
+    badgeName: z.string(), // Nome do selo (ex: "Denunciador Profissional")
+    badgeDescription: z.string(), // Descrição do selo
     achieved: z.boolean(),
     achievedAt: z.string().optional(),
     icon: z.string(),
@@ -122,26 +124,30 @@ export type ActionStatus = z.infer<typeof ActionStatusSchema>;
 // User Schema
 export const UserSchema = z.object({
     id: z.string(),
-    email: z.string().email(),
+    email: z.string(),
     name: z.string(),
     avatar: z.string().optional(),
     verified: z.boolean().default(false),
     createdAt: z.string(),
     bio: z.string().optional(),
-    location: z.object({
-        city: z.string().optional(),
-        state: z.string().optional(),
-        country: z.string().optional(),
-    }).optional(),
-    stats: z.object({
-        reportsCreated: z.number().default(0),
-        reportsSigned: z.number().default(0),
-        impactScore: z.number().default(0),
-    }).default({
-        reportsCreated: 0,
-        reportsSigned: 0,
-        impactScore: 0,
-    }),
+    location: z
+        .object({
+            city: z.string().optional(),
+            state: z.string().optional(),
+            country: z.string().optional(),
+        })
+        .optional(),
+    stats: z
+        .object({
+            reportsCreated: z.number().default(0),
+            reportsSigned: z.number().default(0),
+            impactScore: z.number().default(0),
+        })
+        .default({
+            reportsCreated: 0,
+            reportsSigned: 0,
+            impactScore: 0,
+        }),
 });
 
 export type User = z.infer<typeof UserSchema>;

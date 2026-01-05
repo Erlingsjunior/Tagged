@@ -22,9 +22,9 @@ const fontSizeMap = {
 };
 
 const AvatarContainer = styled(View)<{ size: number }>`
-    width: ${(props: { size: any; }) => props.size}px;
-    height: ${(props: { size: any; }) => props.size}px;
-    border-radius: ${(props: { size: number; }) => props.size / 2}px;
+    width: ${(props: { size: any }) => props.size}px;
+    height: ${(props: { size: any }) => props.size}px;
+    border-radius: ${(props: { size: number }) => props.size / 2}px;
     background-color: ${theme.colors.primary};
     align-items: center;
     justify-content: center;
@@ -39,10 +39,14 @@ const AvatarImage = styled(Image)`
 const AvatarText = styled(Text)<{ fontSize: number }>`
     color: ${theme.colors.surface};
     font-weight: bold;
-    font-size: ${(props: { fontSize: any; }) => props.fontSize}px;
+    font-size: ${(props: { fontSize: any }) => props.fontSize}px;
 `;
 
-export const Avatar: React.FC<AvatarProps> = ({ name, avatar, size = "medium" }) => {
+export const Avatar: React.FC<AvatarProps> = ({
+    name,
+    avatar,
+    size = "medium",
+}) => {
     const avatarSize = sizeMap[size];
     const fontSize = fontSizeMap[size];
 
@@ -51,7 +55,9 @@ export const Avatar: React.FC<AvatarProps> = ({ name, avatar, size = "medium" })
             {avatar ? (
                 <AvatarImage source={{ uri: avatar }} />
             ) : (
-                <AvatarText fontSize={fontSize}>{name.charAt(0).toUpperCase()}</AvatarText>
+                <AvatarText fontSize={fontSize}>
+                    {name.charAt(0).toUpperCase()}
+                </AvatarText>
             )}
         </AvatarContainer>
     );
