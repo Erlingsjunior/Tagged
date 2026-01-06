@@ -80,10 +80,23 @@ const getRelevantImageUrl = (
     width: number = 600,
     height: number = 400
 ): string => {
-    const keywords = getCategoryImageKeywords(category);
-    const keyword = faker.helpers.arrayElement(keywords);
-    // Usando Unsplash Source API com keywords específicas
-    return `https://source.unsplash.com/featured/${width}x${height}/?${keyword}`;
+    // Mapear categorias para IDs de imagens específicas do Picsum
+    // Isso garante imagens consistentes e apropriadas para cada categoria
+    const categoryImageIds: Record<string, number[]> = {
+        corruption: [10, 15, 28, 33, 42, 48, 52, 58, 63, 69],
+        police_violence: [16, 22, 31, 37, 43, 49, 55, 61, 67, 73],
+        discrimination: [18, 24, 32, 38, 44, 50, 56, 62, 68, 74],
+        environment: [11, 17, 25, 34, 45, 51, 57, 64, 70, 76],
+        health: [12, 19, 26, 35, 41, 47, 53, 59, 65, 71],
+        education: [14, 21, 29, 36, 46, 54, 60, 66, 72, 78],
+        transport: [13, 20, 27, 39, 40, 30, 23, 75, 77, 79],
+    };
+
+    const imageIds = categoryImageIds[category] || [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const imageId = faker.helpers.arrayElement(imageIds);
+
+    // Usando Picsum com IDs específicos para cada categoria
+    return `https://picsum.photos/id/${imageId}/${width}/${height}`;
 };
 
 const statuses = ["active", "investigating", "resolved"] as const;
@@ -148,7 +161,32 @@ const generateMockPost = (id: number): Post => {
         .replace("{neighborhood}", neighborhood);
 
     const content = faker.lorem.paragraphs(2);
-    const supports = faker.number.int({ min: 50, max: 50000000 }); // Aumentado para até 50M
+
+    // Gerar supports com distribuição mais realista e variada
+    // 20% - Denúncias pequenas (50 a 500)
+    // 30% - Denúncias médias (500 a 5.000)
+    // 25% - Denúncias grandes (5.000 a 50.000)
+    // 15% - Denúncias virais (50.000 a 500.000)
+    // 10% - Denúncias massivas (500.000 a 50.000.000)
+    const rand = Math.random();
+    let supports: number;
+
+    if (rand < 0.20) {
+        // 20% - Pequenas (50 a 500)
+        supports = faker.number.int({ min: 50, max: 500 });
+    } else if (rand < 0.50) {
+        // 30% - Médias (500 a 5.000)
+        supports = faker.number.int({ min: 500, max: 5000 });
+    } else if (rand < 0.75) {
+        // 25% - Grandes (5.000 a 50.000)
+        supports = faker.number.int({ min: 5000, max: 50000 });
+    } else if (rand < 0.90) {
+        // 15% - Virais (50.000 a 500.000)
+        supports = faker.number.int({ min: 50000, max: 500000 });
+    } else {
+        // 10% - Massivas (500.000 a 50.000.000)
+        supports = faker.number.int({ min: 500000, max: 50000000 });
+    }
 
     // Sistema completo de achievements até 50M+ com selos temáticos
     const achievementTiers = [
@@ -448,9 +486,12 @@ const generateMockPost = (id: number): Post => {
             state: faker.location.state({ abbreviated: true }),
         },
         stats: {
-            likes: faker.number.int({ min: 0, max: 500 }),
-            shares: faker.number.int({ min: 0, max: 100 }),
-            comments: faker.number.int({ min: 0, max: 150 }),
+            // Likes proporcionais aos supports (aproximadamente 5-10% dos supports)
+            likes: faker.number.int({ min: Math.floor(supports * 0.05), max: Math.floor(supports * 0.10) }),
+            // Shares proporcionais (aproximadamente 1-3% dos supports)
+            shares: faker.number.int({ min: Math.floor(supports * 0.01), max: Math.floor(supports * 0.03) }),
+            // Comments proporcionais (aproximadamente 2-5% dos supports)
+            comments: faker.number.int({ min: Math.floor(supports * 0.02), max: Math.floor(supports * 0.05) }),
             supports,
         },
         media: Array.from(
@@ -484,7 +525,7 @@ const generateMockPost = (id: number): Post => {
         milestones,
         updates,
         actionStatus,
-        chatUnlocked: supports >= 100000,
+        chatUnlocked: supports >= 1000, // Chat desbloqueado com 1.000 assinaturas
     };
 };
 

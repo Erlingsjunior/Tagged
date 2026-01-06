@@ -655,10 +655,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                         <ActionButton
                             active={isLiked}
                             onPress={() => {
-                                if (!isLiked) {
-                                    animateHeart();
-                                    playHeartSound();
-                                }
                                 onLike(post.id);
                             }}
                         >

@@ -193,19 +193,38 @@ export default function ProfileScreen() {
             <Content>
                 <Section>
                     <SectionTitle>Minhas Atividades</SectionTitle>
-                    <MenuItem>
-                        <MenuItemText>Minhas Denúncias</MenuItemText>
+                    <MenuItem onPress={() => router.push("/myPosts")}>
+                        <MenuItemLeft>
+                            <Ionicons name="megaphone" size={20} color={theme.colors.primary} />
+                            <MenuItemText>Minhas Denúncias</MenuItemText>
+                        </MenuItemLeft>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
                     </MenuItem>
-                    <MenuItem>
-                        <MenuItemText>Petições Assinadas</MenuItemText>
+                    <MenuItem onPress={() => router.push("/signedPosts")}>
+                        <MenuItemLeft>
+                            <Ionicons name="create" size={20} color={theme.colors.primary} />
+                            <MenuItemText>Petições Assinadas</MenuItemText>
+                        </MenuItemLeft>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
                     </MenuItem>
-                    <MenuItem>
-                        <MenuItemText>Denúncias Salvas</MenuItemText>
+                    <MenuItem onPress={() => router.push("/savedPosts")}>
+                        <MenuItemLeft>
+                            <Ionicons name="bookmark" size={20} color={theme.colors.primary} />
+                            <MenuItemText>Denúncias Salvas</MenuItemText>
+                        </MenuItemLeft>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
                     </MenuItem>
                 </Section>
 
                 <Section>
                     <SectionTitle>Configurações</SectionTitle>
+                    <MenuItem onPress={() => router.push("/editProfile")}>
+                        <MenuItemLeft>
+                            <Ionicons name="person" size={20} color={theme.colors.primary} />
+                            <MenuItemText>Editar Perfil</MenuItemText>
+                        </MenuItemLeft>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
+                    </MenuItem>
                     <MenuItem onPress={() => router.push("/spreadTagged")}>
                         <MenuItemLeft>
                             <Ionicons name="share-social" size={20} color={theme.colors.primary} />
@@ -217,21 +236,35 @@ export default function ProfileScreen() {
                     </MenuItem>
                     <MenuItem>
                         <MenuItemLeft>
-                            <Ionicons name="person" size={20} color={theme.colors.text.secondary} />
-                            <MenuItemText>Editar Perfil</MenuItemText>
-                        </MenuItemLeft>
-                    </MenuItem>
-                    <MenuItem>
-                        <MenuItemLeft>
                             <Ionicons name="notifications" size={20} color={theme.colors.text.secondary} />
                             <MenuItemText>Notificações</MenuItemText>
                         </MenuItemLeft>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
                     </MenuItem>
                     <MenuItem>
                         <MenuItemLeft>
                             <Ionicons name="lock-closed" size={20} color={theme.colors.text.secondary} />
                             <MenuItemText>Privacidade</MenuItemText>
                         </MenuItemLeft>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
+                    </MenuItem>
+                </Section>
+
+                <Section>
+                    <SectionTitle>Apoiar o Projeto</SectionTitle>
+                    <MenuItem onPress={() => router.push("/donate")}>
+                        <MenuItemLeft>
+                            <Ionicons name="heart" size={20} color={theme.colors.error} />
+                            <MenuItemText>Fazer Doação</MenuItemText>
+                        </MenuItemLeft>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
+                    </MenuItem>
+                    <MenuItem onPress={() => router.push("/contact")}>
+                        <MenuItemLeft>
+                            <Ionicons name="mail" size={20} color={theme.colors.primary} />
+                            <MenuItemText>Fale Conosco</MenuItemText>
+                        </MenuItemLeft>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
                     </MenuItem>
                 </Section>
 
