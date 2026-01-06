@@ -4,7 +4,16 @@
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
       "Bash(npm start:*)",
-      "Bash(npx expo start -c)"
+      "Bash(npx expo start -c)",
+      "Bash(curl:*)",
+      "Bash(java -jar bundletool.jar build-apks:*)",
+      "Bash(powershell -Command \"Expand-Archive -Path tagged-app.apks -DestinationPath tagged-apk -Force\")",
+      "Bash(copy tagged-app.apks tagged-app.zip)",
+      "Bash(powershell -Command \"Expand-Archive -Path tagged-app.zip -DestinationPath tagged-apk -Force\")",
+      "Bash(dir:*)",
+      "Bash(keytool:*)",
+      "Bash(where:*)",
+      "Bash(\"C:\\\\Program Files\\\\Common Files\\\\Oracle\\\\Java\\\\javapath\\\\keytool.exe\" -genkey -v -keystore tagged-release.keystore -alias tagged -keyalg RSA -keysize 2048 -validity 10000 -storepass tagged123 -keypass tagged123 -dname \"CN=Tagged, OU=Dev, O=Tagged, L=SaoPaulo, S=SP, C=BR\")"
     ]
   }
 }

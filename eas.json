@@ -13,7 +13,7 @@
         "preview": {
             "distribution": "internal",
             "android": {
-                "buildType": "apk"
+                "buildType": "app-bundle"
             },
             "cache": {
                 "disabled": true
@@ -21,7 +21,8 @@
         },
         "production": {
             "android": {
-                "buildType": "apk"
+                "buildType": "apk",
+                "gradleCommand": ":app:assembleRelease"
             }
         }
     },
