@@ -43,7 +43,7 @@ export const BoxText: React.FC<BoxTextProps> = ({
 
                     {dismissible && onDismiss && (
                         <DismissButton onPress={onDismiss}>
-                            {/* Ícone de X aqui */}
+                            
                             <BoxContent variant={variant} size={size}>
                                 ✕
                             </BoxContent>

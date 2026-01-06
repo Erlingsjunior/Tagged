@@ -3,8 +3,8 @@ import { View, Text } from "react-native";
 import { theme } from "../../../constants/Theme";
 
 export const Badge = styled(View)<{ category: string; size: string }>`
-    background-color: ${(props: { category: string }) => props.category};
-    padding: ${(props: { size: string }) => {
+    background-color: ${(props: { category: string; size: string }) => props.category};
+    padding: ${(props: { category: string; size: string }) => {
         switch (props.size) {
             case "small":
                 return `${theme.spacing.xs}px ${theme.spacing.sm}px`;

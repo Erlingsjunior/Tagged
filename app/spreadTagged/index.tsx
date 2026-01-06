@@ -354,7 +354,7 @@ export default function SpreadTaggedScreen() {
             </Header>
 
             <Content>
-                {/* Hero Section */}
+                
                 <HeroSection>
                     <Ionicons name="share-social" size={64} color={theme.colors.surface} />
                     <HeroTitle>Nossa voz, sua força, muda tudo.</HeroTitle>
@@ -363,7 +363,7 @@ export default function SpreadTaggedScreen() {
                     </HeroSubtitle>
                 </HeroSection>
 
-                {/* Action Buttons */}
+                
                 <ActionSection>
                     {isInitializing ? (
                         <View style={{ padding: 40, alignItems: "center" }}>
@@ -421,7 +421,7 @@ export default function SpreadTaggedScreen() {
                     )}
                 </ActionSection>
 
-                {/* Discovered Devices */}
+                
                 {isReceiving && discoveredDevices.length > 0 && (
                     <ActiveConnectionsSection>
                         <StatsSectionTitle>Dispositivos Encontrados</StatsSectionTitle>
@@ -447,7 +447,7 @@ export default function SpreadTaggedScreen() {
                     </ActiveConnectionsSection>
                 )}
 
-                {/* Stats */}
+                
                 <StatsSection>
                     <StatsSectionTitle>Seu Impacto</StatsSectionTitle>
                     <StatsGrid>
@@ -466,7 +466,7 @@ export default function SpreadTaggedScreen() {
                     </StatsGrid>
                 </StatsSection>
 
-                {/* Active Connections */}
+                
                 {activeConnections.length > 0 && (
                     <ActiveConnectionsSection>
                         <StatsSectionTitle>Conexões Ativas</StatsSectionTitle>
@@ -486,7 +486,7 @@ export default function SpreadTaggedScreen() {
                     </ActiveConnectionsSection>
                 )}
 
-                {/* Info Section */}
+                
                 <InfoSection>
                     <InfoTitle>Como funciona?</InfoTitle>
                     <InfoText>
