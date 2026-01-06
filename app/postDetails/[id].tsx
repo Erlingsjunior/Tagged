@@ -233,12 +233,13 @@ const UpdateContent = styled(Text)`
 `;
 
 // Chat Unlock Banner
-const ChatBanner = styled(View)`
+const ChatBanner = styled(TouchableOpacity)`
     padding: ${theme.spacing.lg}px;
     background-color: ${theme.colors.primary};
     margin-top: ${theme.spacing.sm}px;
     flex-direction: row;
     align-items: center;
+    border-radius: ${theme.borderRadius.md}px;
 `;
 
 const ChatBannerText = styled(View)`
@@ -898,7 +899,7 @@ export default function PostDetailsScreen() {
 
                 {/* Chat Unlock Banner */}
                 {post.chatUnlocked && (
-                    <ChatBanner>
+                    <ChatBanner onPress={() => router.push(`/collaborativeChat/${post.id}`)}>
                         <Ionicons
                             name='chatbubbles'
                             size={40}

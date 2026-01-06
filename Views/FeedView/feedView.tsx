@@ -116,9 +116,9 @@ export const FeedView: React.FC = () => {
         setFilters(newFilters);
     };
 
-    const handleSignature = (postId: string) => {
+    const handleSignature = async (postId: string) => {
         if (!user) return;
-        toggleSignature(postId, user.id, user.name, user.avatar);
+        await toggleSignature(postId, user.id, user.name, user.avatar);
     };
 
     const handleComment = (postId: string) => {
@@ -207,7 +207,10 @@ export const FeedView: React.FC = () => {
                 refreshing={loading}
                 onRefresh={loadPosts}
                 removeClippedSubviews={false}
-                windowSize={10}
+                windowSize={21}
+                maxToRenderPerBatch={10}
+                updateCellsBatchingPeriod={50}
+                initialNumToRender={10}
             />
         </SafeAreaView>
     );
