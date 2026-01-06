@@ -13,7 +13,11 @@
       "Bash(dir:*)",
       "Bash(keytool:*)",
       "Bash(where:*)",
-      "Bash(\"C:\\\\Program Files\\\\Common Files\\\\Oracle\\\\Java\\\\javapath\\\\keytool.exe\" -genkey -v -keystore tagged-release.keystore -alias tagged -keyalg RSA -keysize 2048 -validity 10000 -storepass tagged123 -keypass tagged123 -dname \"CN=Tagged, OU=Dev, O=Tagged, L=SaoPaulo, S=SP, C=BR\")"
+      "Bash(\"C:\\\\Program Files\\\\Common Files\\\\Oracle\\\\Java\\\\javapath\\\\keytool.exe\" -genkey -v -keystore tagged-release.keystore -alias tagged -keyalg RSA -keysize 2048 -validity 10000 -storepass tagged123 -keypass tagged123 -dname \"CN=Tagged, OU=Dev, O=Tagged, L=SaoPaulo, S=SP, C=BR\")",
+      "Bash(npm ls:*)",
+      "Bash(npx expo start)",
+      "Bash(./gradlew clean:*)",
+      "Bash(npx expo start:*)"
     ]
   }
 }
