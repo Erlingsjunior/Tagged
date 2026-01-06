@@ -228,7 +228,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 </FilterButton>
             </SearchContainer>
 
-            {/* Quick Filters */}
             <FiltersRow>
                 {sortOptions.map((option) => (
                     <FilterChip
@@ -254,7 +253,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 ))}
             </FiltersRow>
 
-            {/* Filter Modal */}
             <Modal
                 visible={showFilters}
                 transparent
@@ -277,7 +275,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         </ModalHeader>
 
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            {/* Sort By */}
                             <FilterSection>
                                 <FilterSectionTitle>
                                     Ordenar por
@@ -320,7 +317,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                                 </FilterOptionsRow>
                             </FilterSection>
 
-                            {/* Location */}
                             <FilterSection>
                                 <FilterSectionTitle>
                                     Localização
@@ -364,7 +360,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                                 </FilterOptionsRow>
                             </FilterSection>
 
-                            {/* Tags */}
                             <FilterSection>
                                 <FilterSectionTitle>Tags</FilterSectionTitle>
                                 <FilterOptionsRow>
@@ -386,7 +381,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                                 </FilterOptionsRow>
                             </FilterSection>
 
-                            {/* Clear Filters Button */}
                             {hasActiveFilters && (
                                 <TouchableOpacity
                                     onPress={() => {

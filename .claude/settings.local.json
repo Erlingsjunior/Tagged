@@ -21,7 +21,10 @@
       "Bash(taskkill:*)",
       "Bash(npx expo prebuild:*)",
       "Bash(find:*)",
-      "Bash(eas --version:*)"
+      "Bash(eas --version:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)"
     ]
   }
 }
