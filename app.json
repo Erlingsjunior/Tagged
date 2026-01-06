@@ -7,7 +7,10 @@
     "icon": "./assets/images/icon.png",
     "scheme": "taggedapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -48,9 +51,11 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "tagged-social-app"
+        "projectId": "004ec541-0c66-4f3d-bf85-612411b90dbd"
       }
-    }
+    },
+    "owner": "clanchief"
   }
 }
