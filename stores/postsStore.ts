@@ -24,6 +24,9 @@ interface PostsState {
     getSignatures: (postId: string) => Signature[];
     getPostsByImpact: () => Post[];
     updatePostMilestones: (post: Post) => Post; // Nova função para recalcular milestones
+    getMyPosts: (userId: string) => Promise<Post[]>; // Minhas denúncias
+    getSignedPosts: (userId: string) => Post[]; // Petições assinadas
+    getSavedPosts: () => Post[]; // Denúncias salvas
 }
 
 const STORAGE_KEYS = {
@@ -114,7 +117,14 @@ export const usePostsStore = create<PostsState>((set, get) => ({
                 AsyncStorage.getItem(STORAGE_KEYS.BASE_SUPPORTS),
             ]);
 
-            let posts = storedPosts ? JSON.parse(storedPosts) : mockPosts;
+            // Se não há posts armazenados, usar mockPosts apenas se for primeira vez
+            // Se já tem posts salvos, manter apenas eles
+            let posts = storedPosts ? JSON.parse(storedPosts) : [];
+
+            // Se não há nenhum post (primeira inicialização), carregar mockPosts
+            if (posts.length === 0 && !storedPosts) {
+                posts = mockPosts;
+            }
             const signaturesData: Record<string, Signature[]> = storedSignatures ? JSON.parse(storedSignatures) : {};
             const signatures = new Map<string, Signature[]>(Object.entries(signaturesData));
             const savedPosts = storedSaved ? new Set<string>(JSON.parse(storedSaved)) : new Set<string>();
@@ -346,5 +356,42 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             const impactB = b.stats.supports * 3 + b.stats.shares * 2 + b.stats.comments;
             return impactB - impactA;
         });
+    },
+
+    // Retorna posts criados pelo usuário (incluindo anônimos)
+    getMyPosts: async (userId: string): Promise<Post[]> => {
+        const { posts } = get();
+
+        // Carregar ownership de posts anônimos
+        const ownershipJson = await AsyncStorage.getItem(STORAGE_KEYS.ANONYMOUS_OWNERSHIP);
+        const ownership = ownershipJson ? JSON.parse(ownershipJson) : {};
+
+        return posts.filter(post => {
+            // Post criado com ID do usuário (não-anônimo)
+            if (post.author.id === userId) {
+                return true;
+            }
+            // Post anônimo que pertence ao usuário
+            if (ownership[post.id] === userId) {
+                return true;
+            }
+            return false;
+        });
+    },
+
+    // Retorna posts que o usuário assinou
+    getSignedPosts: (userId: string): Post[] => {
+        const { posts, signatures } = get();
+
+        return posts.filter(post => {
+            const postSignatures = signatures.get(post.id) || [];
+            return postSignatures.some(sig => sig.userId === userId);
+        });
+    },
+
+    // Retorna posts salvos (favoritos)
+    getSavedPosts: (): Post[] => {
+        const { posts, savedPosts } = get();
+        return posts.filter(post => savedPosts.has(post.id));
     },
 }));

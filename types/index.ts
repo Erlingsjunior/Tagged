@@ -127,6 +127,7 @@ export const UserSchema = z.object({
     email: z.string(),
     name: z.string(),
     avatar: z.string().optional(),
+    phone: z.string().optional(),
     verified: z.boolean().default(false),
     createdAt: z.string(),
     bio: z.string().optional(),
