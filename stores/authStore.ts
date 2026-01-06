@@ -14,6 +14,7 @@ interface AuthState {
     logout: () => Promise<void>;
     loadUser: () => Promise<void>;
     updateProfile: (updates: Partial<User>) => Promise<void>;
+    updateUser: (updates: Partial<User>) => Promise<void>; // Alias para updateProfile
 }
 
 const STORAGE_KEYS = {
@@ -151,5 +152,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         } catch (error) {
             console.error("Error updating profile:", error);
         }
+    },
+
+    // Alias para updateProfile
+    updateUser: async (updates: Partial<User>) => {
+        return get().updateProfile(updates);
     },
 }));

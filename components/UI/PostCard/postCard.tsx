@@ -1,11 +1,27 @@
 import React, { useState } from "react";
-import { TouchableOpacity, Image, View, Text, Pressable, Modal, ScrollView } from "react-native";
+import {
+    TouchableOpacity,
+    Image,
+    View,
+    Text,
+    Pressable,
+    Modal,
+    ScrollView,
+    Animated,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Audio } from "expo-av";
 import { Post } from "../../../types";
 import { theme } from "../../../constants/Theme";
 import styled from "styled-components/native";
 import { CategoryBadge } from "../CategoryBadge";
-import { formatNumber, getTimeAgo, truncateText, getFileIcon, formatFileSize } from "../../../utils/formatters";
+import {
+    formatNumber,
+    getTimeAgo,
+    truncateText,
+    getFileIcon,
+    formatFileSize,
+} from "../../../utils/formatters";
 import { ProgressBar } from "../ProgressBar";
 
 interface PostCardProps {
@@ -157,12 +173,14 @@ const ActionButton = styled(TouchableOpacity)<{ active?: boolean }>`
     align-items: center;
     padding: ${theme.spacing.xs}px ${theme.spacing.sm}px;
     border-radius: ${theme.borderRadius.md}px;
-    background-color: ${(props: { active: any; }) => (props.active ? theme.colors.primary + "15" : "transparent")};
+    background-color: ${(props: { active: any }) =>
+        props.active ? theme.colors.primary + "15" : "transparent"};
 `;
 
 const ActionText = styled(Text)<{ active?: boolean }>`
     font-size: 13px;
-    color: ${(props: { active: any; }) => (props.active ? theme.colors.primary : theme.colors.text.secondary)};
+    color: ${(props: { active: any }) =>
+        props.active ? theme.colors.primary : theme.colors.text.secondary};
     margin-left: 4px;
     font-weight: 500;
 `;
@@ -361,12 +379,56 @@ export const PostCard: React.FC<PostCardProps> = ({
 }) => {
     const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
     const [showPreview, setShowPreview] = useState(false);
+    const [lastTap, setLastTap] = useState<number>(0);
+    const [isDoubleTapping, setIsDoubleTapping] = useState(false);
+    const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+    const [heartAnimation] = useState(new Animated.Value(0));
+
+    const playHeartSound = async () => {
+        try {
+            const { sound } = await Audio.Sound.createAsync(
+                require("../../../assets/sounds/bloop.mp3"),
+                { shouldPlay: true, volume: 0.5 }
+            );
+            await sound.playAsync();
+            sound.setOnPlaybackStatusUpdate((status) => {
+                if (
+                    "isLoaded" in status &&
+                    status.isLoaded &&
+                    "didJustFinish" in status &&
+                    status.didJustFinish
+                ) {
+                    sound.unloadAsync();
+                }
+            });
+        } catch (error) {
+            console.log("Error playing sound:", error);
+        }
+    };
+
+    const animateHeart = () => {
+        setShowHeartAnimation(true);
+        heartAnimation.setValue(0);
+
+        Animated.sequence([
+            Animated.timing(heartAnimation, {
+                toValue: 1,
+                duration: 400,
+                useNativeDriver: true,
+            }),
+            Animated.timing(heartAnimation, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+        ]).start(() => setShowHeartAnimation(false));
+    };
 
     const handlePressIn = () => {
         const timer = setTimeout(() => {
             setShowPreview(true);
             console.log("🔍 LONG PRESS DETECTADO - Abrindo preview...");
-        }, 2000);
+        }, 1400); // Reduzido de 2000ms para 1400ms
         setLongPressTimer(timer as unknown as number);
     };
 
@@ -377,8 +439,31 @@ export const PostCard: React.FC<PostCardProps> = ({
         }
     };
 
+    const handleDoubleTap = () => {
+        const now = Date.now();
+        const DOUBLE_TAP_DELAY = 300; // 300ms para detectar double tap
+
+        if (now - lastTap < DOUBLE_TAP_DELAY) {
+            // Double tap detectado!
+            console.log("❤️ DOUBLE TAP - Dando like!");
+            setIsDoubleTapping(true);
+
+            if (!isLiked) {
+                onLike(post.id);
+                animateHeart();
+                playHeartSound();
+            }
+
+            // Reset the flag after a delay
+            setTimeout(() => {
+                setIsDoubleTapping(false);
+            }, 400);
+        }
+        setLastTap(now);
+    };
+
     const handlePress = () => {
-        if (showPreview) {
+        if (showPreview || isDoubleTapping) {
             return;
         }
 
@@ -414,34 +499,85 @@ export const PostCard: React.FC<PostCardProps> = ({
                 onPress={handlePress}
             >
                 {/* Thumbnail */}
-                <ThumbnailContainer>
+                <ThumbnailContainer onTouchEnd={handleDoubleTap}>
                     {post.media.length > 0 ? (
-                        <Thumbnail source={{ uri: post.media[0].url }} resizeMode="cover" />
+                        <Thumbnail
+                            source={{ uri: post.media[0].url }}
+                            resizeMode='cover'
+                        />
                     ) : (
-                        <Thumbnail source={{ uri: `https://picsum.photos/seed/${post.id}/600/400` }} resizeMode="cover" />
+                        <Thumbnail
+                            source={{
+                                uri: `https://picsum.photos/seed/${post.id}/600/400`,
+                            }}
+                            resizeMode='cover'
+                        />
                     )}
                     <BadgeWrapper>
-                        <CategoryBadge category={post.category} size="small" />
+                        <CategoryBadge category={post.category} size='small' />
                     </BadgeWrapper>
+
+                    {/* Animação de coração do double tap */}
+                    {showHeartAnimation && (
+                        <Animated.View
+                            style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                pointerEvents: "none",
+                                opacity: heartAnimation.interpolate({
+                                    inputRange: [0, 0.5, 1],
+                                    outputRange: [0, 1, 0],
+                                }),
+                                transform: [
+                                    {
+                                        scale: heartAnimation.interpolate({
+                                            inputRange: [0, 0.5, 1],
+                                            outputRange: [0.5, 1.2, 0.8],
+                                        }),
+                                    },
+                                ],
+                            }}
+                        >
+                            <Ionicons
+                                name='heart'
+                                size={100}
+                                color={theme.colors.primary}
+                            />
+                        </Animated.View>
+                    )}
                 </ThumbnailContainer>
 
                 <ContentSection>
                     {/* Header */}
                     <Header>
                         <Avatar>
-                            <AvatarText>{post.author.name.charAt(0).toUpperCase()}</AvatarText>
+                            <AvatarText>
+                                {post.author.name.charAt(0).toUpperCase()}
+                            </AvatarText>
                         </Avatar>
                         <UserInfo>
                             <UserName>{post.author.name}</UserName>
                             <PostMeta>
-                                {post.location.city}, {post.location.state} • {getTimeAgo(post.createdAt)}
+                                {post.location.city}, {post.location.state} •{" "}
+                                {getTimeAgo(post.createdAt)}
                             </PostMeta>
                         </UserInfo>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 12,
+                            }}
+                        >
                             {!post.isAnonymous && onChat && (
                                 <TouchableOpacity onPress={() => onChat(post)}>
                                     <Ionicons
-                                        name="chatbubble"
+                                        name='chatbubble'
                                         size={22}
                                         color={theme.colors.primary}
                                     />
@@ -449,9 +585,17 @@ export const PostCard: React.FC<PostCardProps> = ({
                             )}
                             <TouchableOpacity onPress={() => onSave(post.id)}>
                                 <Ionicons
-                                    name={isSaved ? "bookmark" : "bookmark-outline"}
+                                    name={
+                                        isSaved
+                                            ? "bookmark"
+                                            : "bookmark-outline"
+                                    }
                                     size={22}
-                                    color={isSaved ? theme.colors.primary : theme.colors.text.secondary}
+                                    color={
+                                        isSaved
+                                            ? theme.colors.primary
+                                            : theme.colors.text.secondary
+                                    }
                                 />
                             </TouchableOpacity>
                         </View>
@@ -459,7 +603,9 @@ export const PostCard: React.FC<PostCardProps> = ({
 
                     {/* Title & Description */}
                     <Title numberOfLines={2}>{post.title}</Title>
-                    <Description numberOfLines={2}>{shortDescription}</Description>
+                    <Description numberOfLines={2}>
+                        {shortDescription}
+                    </Description>
 
                     {/* Tags */}
                     <TagsContainer>
@@ -473,37 +619,74 @@ export const PostCard: React.FC<PostCardProps> = ({
                     {/* Stats */}
                     <StatsRow>
                         <StatItem>
-                            <Ionicons name="people" size={16} color={theme.colors.text.secondary} />
-                            <StatText>{formatNumber(post.stats.supports)}</StatText>
+                            <Ionicons
+                                name='people'
+                                size={16}
+                                color={theme.colors.text.secondary}
+                            />
+                            <StatText>
+                                {formatNumber(post.stats.supports)}
+                            </StatText>
                         </StatItem>
                         <StatItem>
-                            <Ionicons name="chatbubble" size={16} color={theme.colors.text.secondary} />
-                            <StatText>{formatNumber(post.stats.comments)}</StatText>
+                            <Ionicons
+                                name='chatbubble'
+                                size={16}
+                                color={theme.colors.text.secondary}
+                            />
+                            <StatText>
+                                {formatNumber(post.stats.comments)}
+                            </StatText>
                         </StatItem>
                         <StatItem>
-                            <Ionicons name="share-social" size={16} color={theme.colors.text.secondary} />
-                            <StatText>{formatNumber(post.stats.shares)}</StatText>
+                            <Ionicons
+                                name='share-social'
+                                size={16}
+                                color={theme.colors.text.secondary}
+                            />
+                            <StatText>
+                                {formatNumber(post.stats.shares)}
+                            </StatText>
                         </StatItem>
                     </StatsRow>
 
                     {/* Actions */}
                     <ActionsRow>
-                        <ActionButton active={isLiked} onPress={() => onLike(post.id)}>
+                        <ActionButton
+                            active={isLiked}
+                            onPress={() => {
+                                onLike(post.id);
+                            }}
+                        >
                             <Ionicons
                                 name={isLiked ? "heart" : "heart-outline"}
                                 size={20}
-                                color={isLiked ? theme.colors.primary : theme.colors.text.secondary}
+                                color={
+                                    isLiked
+                                        ? theme.colors.primary
+                                        : theme.colors.text.secondary
+                                }
                             />
-                            <ActionText active={isLiked}>Assinar</ActionText>
+                            <ActionText active={isLiked}>
+                                {isLiked ? "Tagged!" : "Taggy"}
+                            </ActionText>
                         </ActionButton>
 
                         <ActionButton onPress={() => onComment(post.id)}>
-                            <Ionicons name="chatbubble-outline" size={20} color={theme.colors.text.secondary} />
+                            <Ionicons
+                                name='chatbubble-outline'
+                                size={20}
+                                color={theme.colors.text.secondary}
+                            />
                             <ActionText>Comentar</ActionText>
                         </ActionButton>
 
                         <ActionButton onPress={() => onShare(post.id)}>
-                            <Ionicons name="share-outline" size={20} color={theme.colors.text.secondary} />
+                            <Ionicons
+                                name='share-outline'
+                                size={20}
+                                color={theme.colors.text.secondary}
+                            />
                             <ActionText>Compartilhar</ActionText>
                         </ActionButton>
                     </ActionsRow>
@@ -513,7 +696,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             <Modal
                 visible={showPreview}
                 transparent={true}
-                animationType="fade"
+                animationType='fade'
                 onRequestClose={handleClosePreview}
             >
                 <PreviewModalOverlay>
@@ -521,18 +704,23 @@ export const PostCard: React.FC<PostCardProps> = ({
                         <PreviewHeader>
                             <PreviewTitle>Prévia da Denúncia</PreviewTitle>
                             <CloseButton onPress={handleClosePreview}>
-                                <Ionicons name="close" size={24} color={theme.colors.text.primary} />
+                                <Ionicons
+                                    name='close'
+                                    size={24}
+                                    color={theme.colors.text.primary}
+                                />
                             </CloseButton>
                         </PreviewHeader>
 
                         <ScrollView showsVerticalScrollIndicator={false}>
                             <PreviewImage
                                 source={{
-                                    uri: post.media.length > 0
-                                        ? post.media[0].url
-                                        : `https://picsum.photos/seed/${post.id}/600/400`,
+                                    uri:
+                                        post.media.length > 0
+                                            ? post.media[0].url
+                                            : `https://picsum.photos/seed/${post.id}/600/400`,
                                 }}
-                                resizeMode="cover"
+                                resizeMode='cover'
                             />
 
                             <PreviewContent>
@@ -541,107 +729,319 @@ export const PostCard: React.FC<PostCardProps> = ({
                                     style={{ marginBottom: 12 }}
                                 />
 
-                                <PreviewPostTitle>{post.title}</PreviewPostTitle>
-                                <PreviewDescription>{post.content}</PreviewDescription>
+                                <PreviewPostTitle>
+                                    {post.title}
+                                </PreviewPostTitle>
+                                <PreviewDescription>
+                                    {post.content}
+                                </PreviewDescription>
 
                                 <PreviewStats>
                                     <PreviewStatItem>
-                                        <PreviewStatNumber>{formatNumber(post.stats.supports)}</PreviewStatNumber>
-                                        <PreviewStatLabel>Assinaturas</PreviewStatLabel>
+                                        <PreviewStatNumber>
+                                            {formatNumber(post.stats.supports)}
+                                        </PreviewStatNumber>
+                                        <PreviewStatLabel>
+                                            Assinaturas
+                                        </PreviewStatLabel>
                                     </PreviewStatItem>
                                     <PreviewStatItem>
-                                        <PreviewStatNumber>{formatNumber(post.stats.comments)}</PreviewStatNumber>
-                                        <PreviewStatLabel>Comentários</PreviewStatLabel>
+                                        <PreviewStatNumber>
+                                            {formatNumber(post.stats.comments)}
+                                        </PreviewStatNumber>
+                                        <PreviewStatLabel>
+                                            Comentários
+                                        </PreviewStatLabel>
                                     </PreviewStatItem>
                                     <PreviewStatItem>
-                                        <PreviewStatNumber>{formatNumber(post.stats.shares)}</PreviewStatNumber>
-                                        <PreviewStatLabel>Compartilhamentos</PreviewStatLabel>
+                                        <PreviewStatNumber>
+                                            {formatNumber(post.stats.shares)}
+                                        </PreviewStatNumber>
+                                        <PreviewStatLabel>
+                                            Compartilhamentos
+                                        </PreviewStatLabel>
                                     </PreviewStatItem>
                                 </PreviewStats>
 
                                 {/* Milestones / Achievements Preview */}
-                                {post.milestones && post.milestones.length > 0 && (
-                                    <PreviewSection>
-                                        <PreviewSectionTitle>Conquistas</PreviewSectionTitle>
-                                        <View style={{ marginBottom: theme.spacing.sm }}>
-                                            <ProgressBar
-                                                percentage={
-                                                    (() => {
-                                                        const currentSupports = post.stats.supports;
-                                                        const achievedMilestones = post.milestones.filter((m) => m.achieved);
-                                                        const nextMilestone = post.milestones.find((m) => !m.achieved);
-                                                        const previousMilestone = achievedMilestones[achievedMilestones.length - 1];
-                                                        const progressStart = previousMilestone ? previousMilestone.target : 0;
-                                                        const progressEnd = nextMilestone ? nextMilestone.target : post.milestones[post.milestones.length - 1].target;
-                                                        const progressCurrent = currentSupports - progressStart;
-                                                        const progressTotal = progressEnd - progressStart;
-                                                        return progressTotal > 0 ? Math.min((progressCurrent / progressTotal) * 100, 100) : 0;
-                                                    })()
-                                                }
-                                            />
-                                        </View>
-                                        <PreviewMilestonesRow>
-                                            {post.milestones.slice(0, 5).map((milestone) => (
-                                                <PreviewMilestoneItem key={milestone.id} achieved={milestone.achieved}>
-                                                    <PreviewMilestoneIcon color={milestone.color}>
-                                                        <Ionicons
-                                                            name={milestone.icon as any}
-                                                            size={18}
-                                                            color={milestone.achieved ? milestone.color : theme.colors.text.secondary}
-                                                        />
-                                                    </PreviewMilestoneIcon>
-                                                    <PreviewMilestoneLabel>{milestone.label}</PreviewMilestoneLabel>
-                                                </PreviewMilestoneItem>
-                                            ))}
-                                        </PreviewMilestonesRow>
-                                    </PreviewSection>
-                                )}
-
-                                {/* Evidence Files Preview */}
-                                {post.evidenceFiles && post.evidenceFiles.length > 0 && (
-                                    <PreviewSection>
-                                        <PreviewSectionTitle>Evidências ({post.evidenceFiles.length})</PreviewSectionTitle>
-                                        <PreviewEvidenceGrid>
-                                            {post.evidenceFiles.slice(0, 4).map((file) => (
-                                                <PreviewEvidenceItem key={file.id}>
-                                                    {file.type === "image" || file.type === "video" ? (
-                                                        <PreviewEvidenceImage source={{ uri: file.thumbnail || file.url }} resizeMode="cover" />
-                                                    ) : (
-                                                        <View
+                                {post.milestones &&
+                                    post.milestones.length > 0 && (
+                                        <PreviewSection>
+                                            <PreviewSectionTitle>
+                                                Conquistas
+                                            </PreviewSectionTitle>
+                                            <View
+                                                style={{
+                                                    marginBottom:
+                                                        theme.spacing.xs,
+                                                    flexDirection: "row",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <Text
+                                                    style={{
+                                                        fontSize: 12,
+                                                        fontWeight: "600",
+                                                        color: theme.colors
+                                                            .primary,
+                                                    }}
+                                                >
+                                                    {formatNumber(
+                                                        post.stats.supports
+                                                    )}{" "}
+                                                    assinaturas
+                                                </Text>
+                                                {(() => {
+                                                    const nextMilestone =
+                                                        post.milestones.find(
+                                                            (m) => !m.achieved
+                                                        );
+                                                    return nextMilestone ? (
+                                                        <Text
                                                             style={{
-                                                                flex: 1,
-                                                                justifyContent: "center",
-                                                                alignItems: "center",
-                                                                backgroundColor: theme.colors.border,
+                                                                fontSize: 11,
+                                                                color: theme
+                                                                    .colors.text
+                                                                    .secondary,
                                                             }}
                                                         >
-                                                            <Ionicons name={getFileIcon(file.type) as any} size={36} color={theme.colors.text.secondary} />
-                                                        </View>
-                                                    )}
-                                                    <PreviewEvidenceTypeIcon>
-                                                        <Ionicons name={getFileIcon(file.type) as any} size={12} color={theme.colors.surface} />
-                                                    </PreviewEvidenceTypeIcon>
-                                                    <PreviewEvidenceInfo>
-                                                        <PreviewEvidenceInfoText>
-                                                            {formatFileSize(file.size)}
-                                                        </PreviewEvidenceInfoText>
-                                                    </PreviewEvidenceInfo>
-                                                    <PreviewEvidenceName numberOfLines={1}>{file.name}</PreviewEvidenceName>
-                                                </PreviewEvidenceItem>
-                                            ))}
-                                        </PreviewEvidenceGrid>
-                                        {post.evidenceFiles.length > 4 && (
-                                            <Text style={{
-                                                fontSize: 12,
-                                                color: theme.colors.text.secondary,
-                                                textAlign: 'center',
-                                                marginTop: theme.spacing.sm
-                                            }}>
-                                                +{post.evidenceFiles.length - 4} mais
-                                            </Text>
-                                        )}
-                                    </PreviewSection>
-                                )}
+                                                            Meta:{" "}
+                                                            {formatNumber(
+                                                                nextMilestone.target
+                                                            )}
+                                                        </Text>
+                                                    ) : null;
+                                                })()}
+                                            </View>
+                                            <View
+                                                style={{
+                                                    marginBottom:
+                                                        theme.spacing.sm,
+                                                }}
+                                            >
+                                                <ProgressBar
+                                                    percentage={(() => {
+                                                        const currentSupports =
+                                                            post.stats.supports;
+                                                        const achievedMilestones =
+                                                            post.milestones.filter(
+                                                                (m) =>
+                                                                    m.achieved
+                                                            );
+                                                        const nextMilestone =
+                                                            post.milestones.find(
+                                                                (m) =>
+                                                                    !m.achieved
+                                                            );
+                                                        const previousMilestone =
+                                                            achievedMilestones[
+                                                                achievedMilestones.length - 1
+                                                            ];
+                                                        const progressStart =
+                                                            previousMilestone
+                                                                ? previousMilestone.target
+                                                                : 0;
+                                                        const progressEnd =
+                                                            nextMilestone
+                                                                ? nextMilestone.target
+                                                                : post
+                                                                      .milestones[
+                                                                      post
+                                                                          .milestones
+                                                                          .length - 1
+                                                                  ].target;
+                                                        const progressCurrent =
+                                                            currentSupports -
+                                                            progressStart;
+                                                        const progressTotal =
+                                                            progressEnd -
+                                                            progressStart;
+                                                        return progressTotal > 0
+                                                            ? Math.min(
+                                                                  (progressCurrent /
+                                                                      progressTotal) *
+                                                                      100,
+                                                                  100
+                                                              )
+                                                            : 0;
+                                                    })()}
+                                                />
+                                            </View>
+                                            <PreviewMilestonesRow>
+                                                {(() => {
+                                                    // Mostrar milestones relevantes: últimos 2 conquistados + próximos 3
+                                                    const achieved =
+                                                        post.milestones.filter(
+                                                            (m) => m.achieved
+                                                        );
+                                                    const notAchieved =
+                                                        post.milestones.filter(
+                                                            (m) => !m.achieved
+                                                        );
+                                                    const relevantMilestones = [
+                                                        ...achieved.slice(-2),
+                                                        ...notAchieved.slice(
+                                                            0,
+                                                            3
+                                                        ),
+                                                    ];
+                                                    return relevantMilestones.map(
+                                                        (milestone) => (
+                                                            <PreviewMilestoneItem
+                                                                key={
+                                                                    milestone.id
+                                                                }
+                                                                achieved={
+                                                                    milestone.achieved
+                                                                }
+                                                            >
+                                                                <PreviewMilestoneIcon
+                                                                    color={
+                                                                        milestone.color
+                                                                    }
+                                                                >
+                                                                    <Ionicons
+                                                                        name={
+                                                                            milestone.icon as any
+                                                                        }
+                                                                        size={
+                                                                            18
+                                                                        }
+                                                                        color={
+                                                                            milestone.achieved
+                                                                                ? milestone.color
+                                                                                : theme
+                                                                                      .colors
+                                                                                      .text
+                                                                                      .secondary
+                                                                        }
+                                                                    />
+                                                                </PreviewMilestoneIcon>
+                                                                <PreviewMilestoneLabel>
+                                                                    {
+                                                                        milestone.label
+                                                                    }
+                                                                </PreviewMilestoneLabel>
+                                                            </PreviewMilestoneItem>
+                                                        )
+                                                    );
+                                                })()}
+                                            </PreviewMilestonesRow>
+                                        </PreviewSection>
+                                    )}
+
+                                {/* Evidence Files Preview */}
+                                {post.evidenceFiles &&
+                                    post.evidenceFiles.length > 0 && (
+                                        <PreviewSection>
+                                            <PreviewSectionTitle>
+                                                Evidências (
+                                                {post.evidenceFiles.length})
+                                            </PreviewSectionTitle>
+                                            <PreviewEvidenceGrid>
+                                                {post.evidenceFiles
+                                                    .slice(0, 4)
+                                                    .map((file) => (
+                                                        <PreviewEvidenceItem
+                                                            key={file.id}
+                                                        >
+                                                            {file.type ===
+                                                                "image" ||
+                                                            file.type ===
+                                                                "video" ? (
+                                                                <PreviewEvidenceImage
+                                                                    source={{
+                                                                        uri:
+                                                                            file.thumbnail ||
+                                                                            file.url,
+                                                                    }}
+                                                                    resizeMode='cover'
+                                                                />
+                                                            ) : (
+                                                                <View
+                                                                    style={{
+                                                                        flex: 1,
+                                                                        justifyContent:
+                                                                            "center",
+                                                                        alignItems:
+                                                                            "center",
+                                                                        backgroundColor:
+                                                                            theme
+                                                                                .colors
+                                                                                .border,
+                                                                    }}
+                                                                >
+                                                                    <Ionicons
+                                                                        name={
+                                                                            getFileIcon(
+                                                                                file.type
+                                                                            ) as any
+                                                                        }
+                                                                        size={
+                                                                            36
+                                                                        }
+                                                                        color={
+                                                                            theme
+                                                                                .colors
+                                                                                .text
+                                                                                .secondary
+                                                                        }
+                                                                    />
+                                                                </View>
+                                                            )}
+                                                            <PreviewEvidenceTypeIcon>
+                                                                <Ionicons
+                                                                    name={
+                                                                        getFileIcon(
+                                                                            file.type
+                                                                        ) as any
+                                                                    }
+                                                                    size={12}
+                                                                    color={
+                                                                        theme
+                                                                            .colors
+                                                                            .surface
+                                                                    }
+                                                                />
+                                                            </PreviewEvidenceTypeIcon>
+                                                            <PreviewEvidenceInfo>
+                                                                <PreviewEvidenceInfoText>
+                                                                    {formatFileSize(
+                                                                        file.size
+                                                                    )}
+                                                                </PreviewEvidenceInfoText>
+                                                            </PreviewEvidenceInfo>
+                                                            <PreviewEvidenceName
+                                                                numberOfLines={
+                                                                    1
+                                                                }
+                                                            >
+                                                                {file.name}
+                                                            </PreviewEvidenceName>
+                                                        </PreviewEvidenceItem>
+                                                    ))}
+                                            </PreviewEvidenceGrid>
+                                            {post.evidenceFiles.length > 4 && (
+                                                <Text
+                                                    style={{
+                                                        fontSize: 12,
+                                                        color: theme.colors.text
+                                                            .secondary,
+                                                        textAlign: "center",
+                                                        marginTop:
+                                                            theme.spacing.sm,
+                                                    }}
+                                                >
+                                                    +
+                                                    {post.evidenceFiles.length -
+                                                        4}{" "}
+                                                    mais
+                                                </Text>
+                                            )}
+                                        </PreviewSection>
+                                    )}
 
                                 <TouchableOpacity
                                     onPress={handleOpenDetails}
@@ -650,10 +1050,16 @@ export const PostCard: React.FC<PostCardProps> = ({
                                         padding: 16,
                                         borderRadius: 8,
                                         marginTop: 16,
-                                        alignItems: 'center',
+                                        alignItems: "center",
                                     }}
                                 >
-                                    <Text style={{ color: theme.colors.surface, fontWeight: 'bold', fontSize: 16 }}>
+                                    <Text
+                                        style={{
+                                            color: theme.colors.surface,
+                                            fontWeight: "bold",
+                                            fontSize: 16,
+                                        }}
+                                    >
                                         Ver Detalhes Completos
                                     </Text>
                                 </TouchableOpacity>
