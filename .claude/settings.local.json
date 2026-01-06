@@ -17,7 +17,11 @@
       "Bash(npm ls:*)",
       "Bash(npx expo start)",
       "Bash(./gradlew clean:*)",
-      "Bash(npx expo start:*)"
+      "Bash(npx expo start:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx expo prebuild:*)",
+      "Bash(find:*)",
+      "Bash(eas --version:*)"
     ]
   }
 }
