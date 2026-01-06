@@ -1,4 +1,4 @@
-package com.anonymous.TaggedApp
+package com.tagged.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

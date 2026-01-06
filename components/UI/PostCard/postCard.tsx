@@ -498,7 +498,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                 onPressOut={handlePressOut}
                 onPress={handlePress}
             >
-                {/* Thumbnail */}
                 <ThumbnailContainer onTouchEnd={handleDoubleTap}>
                     {post.media.length > 0 ? (
                         <Thumbnail
@@ -517,7 +516,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                         <CategoryBadge category={post.category} size='small' />
                     </BadgeWrapper>
 
-                    {/* Animação de coração do double tap */}
                     {showHeartAnimation && (
                         <Animated.View
                             style={{
@@ -553,7 +551,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                 </ThumbnailContainer>
 
                 <ContentSection>
-                    {/* Header */}
                     <Header>
                         <Avatar>
                             <AvatarText>
@@ -601,13 +598,11 @@ export const PostCard: React.FC<PostCardProps> = ({
                         </View>
                     </Header>
 
-                    {/* Title & Description */}
                     <Title numberOfLines={2}>{post.title}</Title>
                     <Description numberOfLines={2}>
                         {shortDescription}
                     </Description>
 
-                    {/* Tags */}
                     <TagsContainer>
                         {post.tags.slice(0, 3).map((tag, index) => (
                             <Tag key={index}>
@@ -616,7 +611,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                         ))}
                     </TagsContainer>
 
-                    {/* Stats */}
                     <StatsRow>
                         <StatItem>
                             <Ionicons
@@ -650,7 +644,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                         </StatItem>
                     </StatsRow>
 
-                    {/* Actions */}
                     <ActionsRow>
                         <ActionButton
                             active={isLiked}
@@ -763,7 +756,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                                     </PreviewStatItem>
                                 </PreviewStats>
 
-                                {/* Milestones / Achievements Preview */}
                                 {post.milestones &&
                                     post.milestones.length > 0 && (
                                         <PreviewSection>
@@ -932,7 +924,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                                         </PreviewSection>
                                     )}
 
-                                {/* Evidence Files Preview */}
                                 {post.evidenceFiles &&
                                     post.evidenceFiles.length > 0 && (
                                         <PreviewSection>
