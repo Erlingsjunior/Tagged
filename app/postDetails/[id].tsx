@@ -528,7 +528,7 @@ export default function PostDetailsScreen() {
             </Header>
 
             <Content>
-                {/* Hero Image */}
+                
                 <View style={{ position: "relative" }}>
                     <HeroImage
                         source={{
@@ -544,7 +544,7 @@ export default function PostDetailsScreen() {
                     </BadgeWrapper>
                 </View>
 
-                {/* Info */}
+                
                 <InfoSection>
                     <PostTitle>{post.title}</PostTitle>
 
@@ -566,7 +566,7 @@ export default function PostDetailsScreen() {
                     <Description>{post.content}</Description>
                 </InfoSection>
 
-                {/* Stats */}
+                
                 <StatsSection>
                     <StatBox
                         value={post.stats.supports}
@@ -585,7 +585,7 @@ export default function PostDetailsScreen() {
                     />
                 </StatsSection>
 
-                {/* Milestones / Achievements */}
+                
                 {milestones.length > 0 && (
                     <MilestoneSection>
                         <SectionTitle>Conquistas e Metas</SectionTitle>
@@ -666,7 +666,7 @@ export default function PostDetailsScreen() {
                             </NextGoalText>
                         )}
 
-                        {/* Selos Conquistados */}
+                        
                         {achievedMilestones.length > 0 && (
                             <View style={{ marginTop: theme.spacing.lg }}>
                                 <View
@@ -833,7 +833,7 @@ export default function PostDetailsScreen() {
                     </MilestoneSection>
                 )}
 
-                {/* Status Tags */}
+                
                 {post.actionStatus && (
                     <StatusTagsSection>
                         <SectionTitle>Status da Denúncia</SectionTitle>
@@ -876,7 +876,7 @@ export default function PostDetailsScreen() {
                     </StatusTagsSection>
                 )}
 
-                {/* Updates/News */}
+                
                 {post.updates && post.updates.length > 0 && (
                     <UpdatesSection>
                         <SectionTitle>Atualizações do Caso</SectionTitle>
@@ -897,7 +897,7 @@ export default function PostDetailsScreen() {
                     </UpdatesSection>
                 )}
 
-                {/* Chat Unlock Banner */}
+                
                 {post.chatUnlocked && (
                     <ChatBanner onPress={() => router.push(`/collaborativeChat/${post.id}`)}>
                         <Ionicons
@@ -922,7 +922,7 @@ export default function PostDetailsScreen() {
                     </ChatBanner>
                 )}
 
-                {/* Evidence Files */}
+                
                 {post.evidenceFiles && post.evidenceFiles.length > 0 && (
                     <EvidenceSection>
                         <SectionTitle>
@@ -992,7 +992,7 @@ export default function PostDetailsScreen() {
                     </EvidenceSection>
                 )}
 
-                {/* Signatures List */}
+                
                 {signatures.length > 0 && (
                     <SignaturesSection>
                         <SectionTitle>
@@ -1022,7 +1022,7 @@ export default function PostDetailsScreen() {
                     </SignaturesSection>
                 )}
 
-                {/* Comments Preview */}
+                
                 {comments.length > 0 && (
                     <CommentsSection>
                         <SectionTitle>
@@ -1042,7 +1042,7 @@ export default function PostDetailsScreen() {
                 )}
             </Content>
 
-            {/* Modal Ver Todos os Selos */}
+            
             <Modal
                 visible={showAllBadges}
                 animationType='slide'
@@ -1064,7 +1064,7 @@ export default function PostDetailsScreen() {
                             maxHeight: "90%",
                         }}
                     >
-                        {/* Header do Modal */}
+                        
                         <View
                             style={{
                                 flexDirection: "row",
@@ -1095,7 +1095,7 @@ export default function PostDetailsScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        {/* Lista de Selos */}
+                        
                         <ScrollView style={{ padding: theme.spacing.lg }}>
                             {achievedMilestones.reverse().map((milestone) => (
                                 <View
@@ -1203,7 +1203,7 @@ export default function PostDetailsScreen() {
                 </View>
             </Modal>
 
-            {/* Action Bar */}
+            
             <ActionBar>
                 <ActionButton
                     variant={userHasSigned ? "secondary" : "primary"}
@@ -1252,7 +1252,7 @@ export default function PostDetailsScreen() {
                 </ActionButton>
             </ActionBar>
 
-            {/* Animação de coração */}
+            
             {showHeart && (
                 <Animated.View
                     style={{

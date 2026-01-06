@@ -5,16 +5,16 @@ import { ProgressBarProps } from "./progressBar.types";
 import { theme } from "../../../constants/Theme";
 
 const Container = styled(View)<{ height: number; backgroundColor: string }>`
-    height: ${(props: { height: number }) => props.height}px;
-    background-color: ${(props: { backgroundColor: string }) => props.backgroundColor};
-    border-radius: ${(props: { height: number }) => props.height / 2}px;
+    height: ${(props: { height: number; backgroundColor: string }) => props.height}px;
+    background-color: ${(props: { height: number; backgroundColor: string }) => props.backgroundColor};
+    border-radius: ${(props: { height: number; backgroundColor: string }) => props.height / 2}px;
     overflow: hidden;
 `;
 
 const Fill = styled(View)<{ width: number; color: string }>`
     height: 100%;
-    width: ${(props: { width: number }) => props.width}%;
-    background-color: ${(props: { color: string }) => props.color};
+    width: ${(props: { width: number; color: string }) => props.width}%;
+    background-color: ${(props: { width: number; color: string }) => props.color};
 `;
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
