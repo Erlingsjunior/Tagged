@@ -507,45 +507,55 @@ O **Sistema de Particionamento de Assinaturas** resolve de forma elegante e esca
 
 usamos uma estratégia de **separação entre contador visual e dados reais**:
 
-### 🎯 Estratégia: Números Impressionantes + Dados Leves
+### 🎯 Estratégia: Números Impressionantes + Dados Demonstrativos
 
 ```typescript
-// ✅ ESTRATÉGIA PARA MVP (evita estouro de storage)
+// ✅ ESTRATÉGIA MVP v9 (desbloqueia TODAS as features)
 
 // Contador visual: Números impressionantes mockados
 post.supports = 30_000_000;  // 30 milhões!
 post.supports = 270_000;     // 270 mil
 post.supports = 42_000_000;  // 42 milhões!
 
-// Dados reais: Apenas 100 assinaturas para visualização
-const MAX_REAL_SIGNATURES = 100;
-mockSignaturesCount = Math.min(100, totalSupports);
+// Assinaturas REAIS escalonadas:
+if (totalSupports < 1000) {
+    mockSignatures = 100;  // Apenas contador
+} else if (totalSupports < 5000) {
+    mockSignatures = 1000-2000;  // 🔓 DESBLOQUEIA DOCUMENTO!
+} else if (totalSupports < 10000) {
+    mockSignatures = 2000-4000;  // 💬 Chat + paginação completa
+} else if (totalSupports < 100000) {
+    mockSignatures = 4000-5000;  // 🚀 Todas features
+} else {
+    mockSignatures = 5000;  // 🌟 Demonstra capacidade
+}
 ```
 
 ### Como Funciona
 
-**UI mostra ao usuário:**
-```
-"100 assinaturas mais recentes de 30.000.000"
-```
+**Distribuição de Assinaturas Reais:**
+- Post 1 (500 supports): 100 assinaturas
+- Post 4 (2.456 supports): **1.200 assinaturas** → 🔓 Documento desbloqueado!
+- Post 8 (8.152 supports): **3.200 assinaturas** → 💬 Chat colaborativo!
+- Post 11 (37.520 supports): **5.000 assinaturas** → 🚀 Todas features!
+- Post mega viral (30M): **5.000 assinaturas** → Demonstra capacidade
 
-Isso significa:
-- ✅ **Contador impressionante**: Mostra potencial viral (milhões de supports)
-- ✅ **AsyncStorage leve**: Apenas 100 assinaturas × 15 posts = ~1.500 assinaturas totais
-- ✅ **Todas features visíveis**: Documento, paginação, perfis de apoiadores
-- ✅ **Explicação clara**: Usuário entende que está vendo amostra das mais recentes
+**Total estimado: ~15-20K assinaturas = ~5-8 partições**
 
-### Benefícios da Estratégia MVP
+### Benefícios da Estratégia MVP v9
 
-1. **AsyncStorage saudável**: Total de ~2-3MB de dados (bem dentro do limite)
-2. **Demonstra todas as features**:
-   - ✅ Documento de petição com 100 assinaturas reais
+1. **AsyncStorage saudável**: Total de ~5-8MB de dados (dentro do limite de 10MB)
+2. **TODAS as features desbloqueadas**:
+   - ✅ **Documento de petição completo** (1K+ assinaturas reais!)
+   - ✅ **Chat colaborativo** (milestone 1K atingido)
+   - ✅ **Paginação real** com múltiplas páginas
+   - ✅ **Particionamento funcionando** (5-8 partições criadas)
    - ✅ Perfis de apoiadores funcionando
    - ✅ "Amigos que assinaram" visível
    - ✅ Contador mostra números impressionantes (milhões)
    - ✅ Milestones e conquistas desbloqueadas
-3. **Carregamento instantâneo**: 100 assinaturas carregam em <100ms
-4. **Realista para apresentação**: Simula posts virais sem limitações técnicas
+3. **Demonstração completa**: Todas as features visíveis e funcionais
+4. **Performance mantida**: Carregamento rápido mesmo com milhares de assinaturas
 
 ### Em Produção
 

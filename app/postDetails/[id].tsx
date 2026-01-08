@@ -411,6 +411,10 @@ export default function PostDetailsScreen() {
     const router = useRouter();
     const { posts, toggleSignature, hasUserSigned, getSignatures } =
         usePostsStore();
+
+    // Forçar re-render quando signatures mudar
+    const signaturesMap = usePostsStore((state) => state.signatures);
+
     const { user } = useAuthStore();
     const [showAllComments, setShowAllComments] = useState(false);
     const [showAllBadges, setShowAllBadges] = useState(false);

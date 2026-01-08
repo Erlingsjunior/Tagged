@@ -144,6 +144,9 @@ export default function UserProfileScreen() {
     const { user: currentUser, updateUser } = useAuthStore();
     const { posts, toggleSignature, toggleSave, hasUserSigned } = usePostsStore();
 
+    // Forçar re-render quando signatures mudar
+    const signatures = usePostsStore((state) => state.signatures);
+
     const [profileUser, setProfileUser] = useState<User | null>(null);
     const [activeTab, setActiveTab] = useState<'posts' | 'signed'>('posts');
     const [isFollowing, setIsFollowing] = useState(false);

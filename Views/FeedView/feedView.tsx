@@ -24,6 +24,9 @@ export const FeedView: React.FC = () => {
         hasUserSigned,
     } = usePostsStore();
 
+    // Forçar re-render quando signatures mudar
+    const signatures = usePostsStore((state) => state.signatures);
+
     const { user } = useAuthStore();
     const { getOrCreateConversation, canStartConversation } = useChatStore();
 

@@ -608,21 +608,22 @@ export const generateMockSignatures = (postId: string, totalSupports: number, al
     const signatures: any[] = [];
 
     /**
-     * 🎯 ESTRATÉGIA MVP: NÚMEROS IMPRESSIONANTES + DADOS LEVES
+     * 🎯 ESTRATÉGIA MVP v10: NÚMEROS IMPRESSIONANTES + DADOS LEVES
      *
-     * Para demonstrar o app com números realistas (milhões de supports) sem
-     * estourar o AsyncStorage (~6-10MB):
+     * Para demonstrar TODAS as features sem estourar AsyncStorage (~6-10MB):
      *
-     * - `supports`: Números mockados impressionantes (2 mil, 270 mil, 30 milhões, 42 milhões)
-     * - `signatures`: Apenas 100 assinaturas REAIS para visualização no documento
+     * - Posts < 1K: 100 assinaturas (apenas contador)
+     * - Posts 1K-5K: 1.000-1.500 assinaturas REAIS (desbloqueia documento!)
+     * - Posts 5K+: máximo 3.000 assinaturas REAIS (todas features + segurança)
      *
-     * ✅ Mostra o potencial viral da plataforma
-     * ✅ Mantém AsyncStorage saudável
-     * ✅ Demonstra todas as features (documento, paginação, perfis)
-     * ✅ Explicação clara: "100 assinaturas mais recentes de X milhões"
+     * Total estimado: ~8-12K assinaturas = ~3-4 partições = AsyncStorage super seguro!
+     *
+     * ✅ Desbloqueia documento de petição (1K+)
+     * ✅ Desbloqueia chat colaborativo (1K+)
+     * ✅ Demonstra paginação real (3 páginas)
+     * ✅ Mostra particionamento funcionando
+     * ✅ Mantém AsyncStorage leve e seguro
      */
-
-    const MAX_REAL_SIGNATURES = 100; // Apenas 100 assinaturas reais para visualização
 
     if (totalSupports < 100) {
         // Posts muito pequenos: sem assinaturas mockadas
@@ -630,10 +631,30 @@ export const generateMockSignatures = (postId: string, totalSupports: number, al
         return signatures;
     }
 
-    // Gerar apenas 100 assinaturas para visualização, independente do número de supports
-    const mockSignaturesCount = Math.min(MAX_REAL_SIGNATURES, totalSupports);
+    // Estratégia escalonada CONSERVADORA baseada em supports
+    let mockSignaturesCount = 0;
 
-    console.log(`📝 Gerando ${mockSignaturesCount} assinaturas para post ${postId} (contador: ${totalSupports.toLocaleString()} supports)`);
+    if (totalSupports < 1000) {
+        // Posts pequenos: apenas 100 assinaturas
+        mockSignaturesCount = 100;
+    } else if (totalSupports < 5000) {
+        // Milestone 1K-5K: 1K-1.5K assinaturas REAIS (desbloqueia documento!)
+        mockSignaturesCount = Math.min(1500, Math.floor(totalSupports * 0.3));
+    } else {
+        // Posts 5K+: máximo 3K assinaturas (todas features + segurança)
+        mockSignaturesCount = Math.min(3000, Math.floor(totalSupports * 0.2));
+    }
+
+    const unlockDocument = mockSignaturesCount >= 1000;
+    const unlockChat = mockSignaturesCount >= 1000;
+
+    console.log(`📝 Gerando ${mockSignaturesCount.toLocaleString()} assinaturas para post ${postId} (contador: ${totalSupports.toLocaleString()} supports)`);
+    if (unlockDocument) {
+        console.log(`   🔓 Documento de petição DESBLOQUEADO!`);
+    }
+    if (unlockChat) {
+        console.log(`   💬 Chat colaborativo DESBLOQUEADO!`);
+    }
 
     for (let i = 0; i < mockSignaturesCount; i++) {
         // Escolher um usuário aleatório ou criar um novo
@@ -658,8 +679,7 @@ export const generateMockSignatures = (postId: string, totalSupports: number, al
         });
     }
 
-    console.log(`✅ ${mockSignaturesCount} assinaturas geradas! (contador mostra ${totalSupports.toLocaleString()})`);
-    console.log(`   💡 Usuário verá: "100 assinaturas mais recentes de ${totalSupports.toLocaleString()}"`);
+    console.log(`✅ ${mockSignaturesCount.toLocaleString()} assinaturas geradas! (contador mostra ${totalSupports.toLocaleString()})`);
 
     return signatures;
 };

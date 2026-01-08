@@ -11,13 +11,21 @@ const STORAGE_KEYS = {
 
 export const usePetitionSignatures = (postId: string) => {
     const { user } = useAuthStore();
-    const { getSignatures, hasUserSigned } = usePostsStore();
+    // Agora observamos diretamente o Map de signatures do Zustand
+    const signatures = usePostsStore((state) => state.signatures.get(postId) || []);
+    const { hasUserSigned } = usePostsStore();
 
     const syncSignaturesToPetition = useCallback(async () => {
-        const signatures = getSignatures(postId);
+        console.log(`🔄 Sincronizando ${signatures.length} assinaturas para petition ${postId}`);
 
         const usersDbJson = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
         const usersDb = usersDbJson ? JSON.parse(usersDbJson) : {};
+
+        // Limpar assinaturas antigas para evitar duplicatas
+        const petition = petitionService.getPetition(postId);
+        if (petition) {
+            petition.signatures = [];
+        }
 
         signatures.forEach((sig) => {
             const signerData = Object.values(usersDb).find((u: any) => u.id === sig.userId) as any;
@@ -33,8 +41,9 @@ export const usePetitionSignatures = (postId: string) => {
 
             petitionService.addSignature(postId, signature);
         });
-    }, [postId, getSignatures]);
+    }, [postId, signatures]);
 
+    // Agora sincroniza toda vez que signatures mudar!
     useEffect(() => {
         syncSignaturesToPetition();
     }, [syncSignaturesToPetition]);

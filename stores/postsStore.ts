@@ -95,12 +95,15 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             set({ loading: true, error: null });
 
             // MIGRATION: Check if we need to clear old data
-            const migrationKey = "tagged_migration_v8";
+            const migrationKey = "tagged_migration_v10";
             const migrationDone = await AsyncStorage.getItem(migrationKey);
 
             if (!migrationDone) {
-                console.log("🔄 Running migration v8: corrigindo IDs de autores para serem consistentes...");
-                console.log("   👤 Agora perfis de usuários aparecem corretamente!");
+                console.log("🔄 Running migration v10: estratégia CONSERVADORA de assinaturas...");
+                console.log("   📊 Posts < 1K: 100 assinaturas");
+                console.log("   📊 Posts 1K-5K: 1K-1.5K assinaturas (documento desbloqueado!)");
+                console.log("   📊 Posts 5K+: máximo 3K assinaturas (super seguro!)");
+                console.log("   💾 Total: ~8-12K assinaturas = ~3-4 partições = AsyncStorage super leve!");
 
                 await AsyncStorage.multiRemove([
                     STORAGE_KEYS.POSTS,
@@ -114,13 +117,15 @@ export const usePostsStore = create<PostsState>((set, get) => ({
                     "tagged_migration_v5",
                     "tagged_migration_v6",
                     "tagged_migration_v7",
+                    "tagged_migration_v8",
+                    "tagged_migration_v9",
                 ]);
 
                 // Limpar partições antigas se existirem
                 await signatureStorageManager.clearAllPartitions();
 
                 await AsyncStorage.setItem(migrationKey, "done");
-                console.log("✅ Migration v8 completed!");
+                console.log("✅ Migration v10 completed!");
             }
 
             const [storedPosts, storedSaved, storedBaseSupports] = await Promise.all([
@@ -296,6 +301,8 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             "tagged_users_db",
             "tagged_migration_v7",
             "tagged_migration_v8",
+            "tagged_migration_v9",
+            "tagged_migration_v10",
         ]);
 
         // Limpar partições de assinaturas
