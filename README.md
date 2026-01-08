@@ -37,23 +37,54 @@ Cada **LIKE = Assinatura Legal** em uma petição com força jurídica real:
 
 ### ✅ Core Features Implementadas
 
-- ✊ **Feed de Denúncias**: Exposição pública de injustiças sociais
-- 🔥 **Sistema de Assinaturas**: Cada like = apoio legal verificável
-- 📊 **Milestones Dinâmicos**: Conquistas que desbloqueiam recursos
+#### 📱 Feed e Denúncias
+- ✊ **Feed de Denúncias**: Exposição pública de injustiças sociais com busca e filtros
+- 🔥 **Sistema de Assinaturas**: Cada like = apoio legal verificável com contagem real
+- 📊 **Milestones Dinâmicos**: Conquistas que desbloqueiam recursos (100, 500, 1K, 5K, 10K+)
+- 🎭 **Denúncias Anônimas**: Proteção total para denunciantes com ownership tracking
+- 🔄 **Pull to Refresh**: Atualização de dados com gesto pull-down
+
+#### 👤 Sistema de Perfis
+- 👥 **Perfis de Usuário Completos**: Página `/user/[id]` com todas as informações
+- 📍 **Navegação entre Perfis**: Clique em avatares/nomes em qualquer lugar do app
+- 📊 **Estatísticas de Usuário**: Denúncias criadas, assinadas, impact score
+- 👫 **Sistema de Follow/Unfollow**: Seguir e ser seguido por outros usuários
+- 🔗 **Integração Total**: Perfis acessíveis em PostCard, PostDetails, Preview, Comments, Chat
+
+#### 📄 Petições e Assinaturas
+- 📜 **Documento de Petição Dinâmico**: Geração automática de PDF-like com dados reais
+- 📑 **Paginação de Assinaturas**: 1000 assinaturas por página com navegação
+- 👥 **Amigos que Assinaram**: Mostra quais seguidores mútuos assinaram a petição
+- 💯 **Assinaturas Mockadas**: ~80% do total de supports como assinaturas de teste
+- ✍️ **Visualização de Assinantes**: Nome, CPF (parcial), data e hora da assinatura
+
+#### 💬 Sistema Social
 - 💬 **Chat Colaborativo**: Desbloqueado com 1000+ assinaturas (jornalistas, advogados, congressistas)
-- 🎭 **Denúncias Anônimas**: Proteção total para denunciantes
-- 📱 **WiFi Direct P2P**: Compartilhamento de APK sem Google/Apple (anti-censura)
+- 💭 **Comentários e Respostas**: Sistema completo de discussão em posts
+- 📱 **Mensagens Diretas**: Chat privado entre usuários
+
+#### 🗂️ Organização Pessoal
 - 💾 **Minhas Denúncias**: Rastreamento de posts criados (incluindo anônimos)
-- ✍️ **Petições Assinadas**: Histórico de causas apoiadas
+- ✍️ **Petições Assinadas**: Histórico de causas apoiadas com filtro
 - ⭐ **Denúncias Salvas**: Sistema de favoritos
-- 👤 **Perfil Completo**: Edição, doações, contato
+- 👤 **Perfil Editável**: Edição de dados, bio, localização
+
+#### 🌐 P2P e Compartilhamento
+- 📱 **WiFi Direct P2P**: Compartilhamento de APK sem Google/Apple (anti-censura)
+- 🔄 **SpreadTagged**: Sistema completo de distribuição P2P offline
 
 ### 🚀 Diferenciais Técnicos
 
 - **Sistema de Ownership Anônimo**: Rastreamento privado de posts via AsyncStorage
 - **Cálculo Dinâmico de Milestones**: Atualização em tempo real baseado em assinaturas
-- **Dados Mock Realistas**: Geração com Faker.js para testes
+- **Dados Mock Realistas**: Geração com Faker.js (pt_BR) com nomes, emails, CPFs, telefones reais
+- **Geração de Usuários Mockados**: Sistema automático que extrai autores únicos dos posts
+- **Assinaturas em Massa**: Geração de até 80% do total de supports como assinaturas mockadas
 - **Arquitetura Modular**: Stores, Services, Components isolados
+- **AsyncStorage com Migrations**: Sistema de versionamento de dados (v5)
+- **Pull to Refresh Avançado**: Recria todos os dados mockados a cada refresh
+- **Navegação Contextual**: Rotas dinâmicas com parâmetros ([id], [postId], etc)
+- **Perfis Completos**: Sistema completo de usuários com stats, following/followers
 
 ---
 
@@ -90,55 +121,95 @@ Cada **LIKE = Assinatura Legal** em uma petição com força jurídica real:
 
 ```
 TaggedApp/
-├── app/                          # Rotas do Expo Router
-│   ├── (tabs)/                   # Tabs principais
-│   │   ├── feed/                 # Feed de denúncias
-│   │   ├── search/               # Busca e filtros
-│   │   ├── createReport/         # Criar denúncia
-│   │   └── profile.tsx           # Perfil do usuário
-│   ├── collaborativeChat/        # Chat para posts com 1000+ likes
-│   ├── myPosts/                  # Denúncias do usuário
-│   ├── signedPosts/              # Petições assinadas
-│   ├── savedPosts/               # Favoritos
-│   ├── editProfile/              # Editar perfil
+├── app/                          # Rotas do Expo Router (file-based routing)
+│   ├── (tabs)/                   # Tabs principais (bottom navigation)
+│   │   ├── feed.tsx              # Feed de denúncias com pull-to-refresh
+│   │   ├── search.tsx            # Busca e filtros avançados
+│   │   ├── createReport.tsx      # Criar denúncia (anônima ou pública)
+│   │   └── profile.tsx           # Perfil do usuário logado
+│   │
+│   ├── user/
+│   │   └── [id].tsx              # 👥 Página de perfil de usuário (dinâmica)
+│   │
+│   ├── postDetails/
+│   │   └── [id].tsx              # Detalhes completos do post com navegação
+│   │
+│   ├── petition/
+│   │   └── [id].tsx              # 📜 Documento de petição com paginação
+│   │
+│   ├── preview/
+│   │   └── [postId].tsx          # Preview modal de post
+│   │
+│   ├── comments/
+│   │   └── [postId].tsx          # Sistema de comentários e respostas
+│   │
+│   ├── chat/
+│   │   ├── index.tsx             # Lista de conversas
+│   │   └── [conversationId].tsx  # Conversa individual
+│   │
+│   ├── collaborativeChat/
+│   │   └── [postId].tsx          # Chat colaborativo (1000+ assinaturas)
+│   │
+│   ├── myPosts/                  # Denúncias do usuário (incluindo anônimas)
+│   ├── signedPosts/              # Petições assinadas pelo usuário
+│   ├── savedPosts/               # Posts salvos (favoritos)
+│   ├── editProfile/              # Editar perfil completo
 │   ├── donate/                   # Sistema de doações
-│   ├── contact/                  # Contato
-│   └── spreadTagged/             # WiFi Direct P2P
+│   ├── contact/                  # Contato com desenvolvedor
+│   └── spreadTagged/             # WiFi Direct P2P sharing
+│
+├── Views/                        # Views/páginas reutilizáveis
+│   └── FeedView/
+│       └── feedView.tsx          # View principal do feed
 │
 ├── components/                   # Componentes reutilizáveis
 │   └── UI/                       # UI components
-│       ├── PostCard/             # Card de denúncia
+│       ├── PostCard/             # Card de denúncia (usado no feed)
 │       ├── Avatar/               # Avatar de usuário
 │       ├── CommentItem/          # Item de comentário
-│       └── ChatBanner/           # Banner do chat colaborativo
+│       ├── ChatBanner/           # Banner do chat colaborativo
+│       ├── SearchBar/            # Barra de busca com filtros
+│       └── [outros]/             # Diversos componentes UI
 │
 ├── stores/                       # Zustand stores (state management)
-│   ├── authStore.ts              # Autenticação e usuário
-│   ├── postsStore.ts             # Posts, assinaturas, saves
-│   ├── commentStore.ts           # Comentários
-│   ├── chatStore.ts              # Mensagens do chat
-│   └── spreadStore.ts            # WiFi Direct e compartilhamento
+│   ├── authStore.ts              # Autenticação, login, usuário logado
+│   ├── postsStore.ts             # Posts, assinaturas, saves, migrations
+│   ├── commentStore.ts           # Comentários e respostas
+│   ├── chatStore.ts              # Mensagens do chat privado
+│   └── spreadStore.ts            # WiFi Direct e compartilhamento P2P
 │
 ├── services/                     # Lógica de negócio e integrações
-│   ├── mockData.ts               # Geração de dados com Faker
-│   └── wifiDirectService.ts      # Serviço de WiFi Direct P2P
+│   ├── mockData.ts               # 🎲 Geração de dados com Faker.js
+│   │                             #   - generateMockUsers()
+│   │                             #   - generateMockSignatures()
+│   │                             #   - generateMockPost()
+│   ├── wifiDirectService.ts      # Serviço de WiFi Direct P2P
+│   └── petitionService.ts        # Serviço de petições e assinaturas
 │
 ├── utils/                        # Funções utilitárias
-│   └── formatters.ts             # Formatação de dados
+│   └── formatters.ts             # Formatação (números, datas, texto)
 │
 ├── types/                        # TypeScript types e schemas Zod
-│   └── index.ts                  # Schemas principais
+│   └── index.ts                  # Schemas principais (Post, User, Signature)
 │
 ├── constants/                    # Constantes do projeto
-│   └── Theme.ts                  # Tema (cores, espaçamentos, etc)
+│   └── Theme.ts                  # Tema (cores, espaçamentos, tipografia)
 │
 ├── assets/                       # Assets estáticos
 │   └── images/                   # Imagens e ícones
 │
+├── docs/                         # 📚 Documentação
+│   ├── FEATURES.md               # Documentação completa de features
+│   ├── DATA_ARCHITECTURE.md      # Arquitetura de dados e AsyncStorage
+│   ├── COMPONENTS_REUSE_SUMMARY.md
+│   ├── SPREAD_TAGGED_IMPLEMENTATION.md
+│   └── PETITION_USAGE_EXAMPLE.md
+│
 ├── app.json                      # Configuração do Expo
 ├── eas.json                      # Configuração de build EAS
 ├── package.json                  # Dependencies e scripts
-└── tsconfig.json                 # Configuração TypeScript
+├── tsconfig.json                 # Configuração TypeScript
+└── README.md                     # Este arquivo
 ```
 
 ---
@@ -235,22 +306,57 @@ npm run build:status
 
 ## 📦 Stores (State Management)
 
-| Store | Responsabilidade |
-|-------|------------------|
-| `authStore` | Autenticação, dados do usuário, login/logout |
-| `postsStore` | Posts, assinaturas, saves, milestones |
-| `commentStore` | Comentários em posts |
-| `chatStore` | Mensagens do chat colaborativo |
-| `spreadStore` | WiFi Direct, compartilhamento P2P |
+| Store | Responsabilidade | Funções Principais |
+|-------|------------------|--------------------|
+| `authStore` | Autenticação, dados do usuário, login/logout | `login()`, `logout()`, `updateProfile()`, `loadUsers()` |
+| `postsStore` | Posts, assinaturas, saves, milestones, migrations | `loadPosts()`, `refreshPosts()`, `toggleSignature()`, `toggleSave()`, `hasUserSigned()`, `getSignatures()`, `getMyPosts()`, `getSignedPosts()` |
+| `commentStore` | Comentários em posts | `getComments()`, `addComment()`, `addReply()`, `toggleLike()` |
+| `chatStore` | Mensagens do chat colaborativo | `getOrCreateConversation()`, `sendMessage()`, `canStartConversation()` |
+| `spreadStore` | WiFi Direct, compartilhamento P2P | `startSharing()`, `startReceiving()`, `addConnection()` |
+
+### 🔑 Principais Características dos Stores
+
+#### postsStore
+- **AsyncStorage Migrations**: Sistema de versionamento (v5) para forçar recriação de dados
+- **Pull to Refresh**: Função `refreshPosts()` que limpa tudo e regenera dados mockados
+- **Geração Automática de Usuários**: Extrai autores únicos dos posts e cria perfis completos
+- **Geração de Assinaturas em Massa**: ~80% do total de supports como assinaturas mockadas
+- **Cálculo Dinâmico**: Milestones e chatUnlocked atualizados em tempo real
+
+#### authStore
+- **Banco de Usuários**: Mantém todos os usuários em `tagged_users_db` no AsyncStorage
+- **Follow/Unfollow**: Sistema completo de seguidores e seguindo
+- **Stats de Usuário**: Denúncias criadas, assinadas, impact score calculado automaticamente
 
 ---
 
 ## 🔧 Services
 
-| Service | Descrição |
-|---------|-----------|
-| `mockData.ts` | Gera dados realistas com Faker.js para desenvolvimento |
-| `wifiDirectService.ts` | Gerencia conexões WiFi Direct P2P para compartilhamento de APK |
+| Service | Descrição | Funções Principais |
+|---------|-----------|-------------------|
+| `mockData.ts` | Gera dados realistas com Faker.js (pt_BR) | `generateMockPost()`, `generateMockUsers()`, `generateMockSignatures()` |
+| `wifiDirectService.ts` | Gerencia conexões WiFi Direct P2P | `startSharing()`, `startReceiving()`, `connectToDevice()` |
+| `petitionService.ts` | Gerencia petições e assinaturas | Armazenamento em memória de petições |
+
+### 🔑 Detalhes dos Services
+
+#### mockData.ts
+- **Localização**: `pt_BR` - Todos os dados em português do Brasil
+- **generateMockUsers()**: Extrai autores únicos dos posts e cria perfis completos com:
+  - Nome, email, CPF, telefone
+  - Bio, localização (cidade, estado)
+  - Stats (denúncias criadas, assinadas, impact score)
+  - Following/followers arrays
+- **generateMockSignatures()**: Gera assinaturas em massa (~80% do total de supports)
+  - Reutiliza usuários existentes quando possível
+  - Cria usuários temporários para completar o volume
+  - Inclui data/hora realista das últimas 30 dias
+- **generateMockPost()**: Cria posts completos com todas as propriedades necessárias
+
+#### petitionService.ts
+- Armazena petições em memória usando Map
+- Gerencia assinaturas por petição
+- Suporte a paginação (1000 assinaturas por página)
 
 ---
 

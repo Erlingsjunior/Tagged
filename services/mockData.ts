@@ -596,9 +596,11 @@ export const generateMockUsers = () => {
 export const generateMockSignatures = (postId: string, totalSupports: number, allUsers: any[]) => {
     const signatures: any[] = [];
 
-    // Se o post tem muitos supports, gerar assinaturas mockadas
-    // Vamos gerar 80% do total de supports como assinaturas mockadas
+    // Gera 80% do total de supports como assinaturas mockadas
+    // Sistema de particionamento robusto suporta milhões de assinaturas!
     const mockSignaturesCount = Math.floor(totalSupports * 0.8);
+
+    console.log(`📝 Gerando ${mockSignaturesCount.toLocaleString()} assinaturas mockadas para post ${postId} (de ${totalSupports.toLocaleString()} supports)`);
 
     for (let i = 0; i < mockSignaturesCount; i++) {
         // Escolher um usuário aleatório ou criar um novo
@@ -622,6 +624,8 @@ export const generateMockSignatures = (postId: string, totalSupports: number, al
             signedAt: faker.date.recent({ days: 30 }),
         });
     }
+
+    console.log(`✅ ${mockSignaturesCount.toLocaleString()} assinaturas geradas com sucesso!`);
 
     return signatures;
 };
