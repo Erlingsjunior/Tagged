@@ -565,6 +565,10 @@ export const generateMockUsers = () => {
         const email = `user${index + 1}@tagged.com`;
         const cpf = faker.string.numeric(11);
 
+        // Gerar apelido baseado no nome
+        const firstName = author.name.split(' ')[0].toLowerCase();
+        const nickname = `${firstName}${faker.number.int({ min: 10, max: 99 })}`;
+
         // Contar quantas denúncias este autor criou
         const reportsCreated = mockPosts.filter(
             p => !p.isAnonymous && p.author.id === author.id
@@ -577,6 +581,7 @@ export const generateMockUsers = () => {
             id: author.id,
             email: email,
             name: author.name,
+            nickname: nickname, // NOVO: apelido do usuário
             cpf: cpf,
             avatar: author.avatar,
             phone: faker.phone.number(),
@@ -596,6 +601,7 @@ export const generateMockUsers = () => {
             },
             following: [],
             followers: [],
+            profileComplete: true, // NOVO: mock users têm perfil completo
             password: 'password123', // Senha padrão para testes
         };
     });

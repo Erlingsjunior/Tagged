@@ -10,7 +10,8 @@ interface AuthState {
 
     // Actions
     login: (email: string, password: string) => Promise<boolean>;
-    register: (email: string, password: string, name: string, cpf: string) => Promise<boolean>;
+    register: (email: string, password: string, nickname: string, name?: string, cpf?: string, phone?: string) => Promise<boolean>;
+    completeProfile: (name: string, cpf: string, phone: string) => Promise<boolean>;
     logout: () => Promise<void>;
     loadUser: () => Promise<void>;
     updateProfile: (updates: Partial<User>) => Promise<void>;
@@ -45,7 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
     },
 
-    register: async (email: string, password: string, name: string, cpf: string) => {
+    register: async (email: string, password: string, nickname: string, name?: string, cpf?: string, phone?: string) => {
         try {
             set({ isLoading: true, error: null });
 
@@ -59,19 +60,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 return false;
             }
 
-            // Check if CPF already exists
-            const cpfExists = Object.values(usersDb).some((u: any) => u.cpf === cpf);
-            if (cpfExists) {
-                set({ error: "CPF já cadastrado", isLoading: false });
-                return false;
+            // Check if CPF already exists (only if provided)
+            if (cpf) {
+                const cpfExists = Object.values(usersDb).some((u: any) => u.cpf === cpf);
+                if (cpfExists) {
+                    set({ error: "CPF já cadastrado", isLoading: false });
+                    return false;
+                }
             }
+
+            // Determine if profile is complete
+            const profileComplete = !!(name && cpf && phone);
 
             // Create new user
             const newUser: User = {
                 id: Date.now().toString(),
                 email,
-                name,
-                cpf,
+                name: name || nickname, // Use nickname if name not provided
+                nickname,
+                cpf: cpf || undefined,
+                phone: phone || undefined,
                 role: 'user',
                 verified: false,
                 createdAt: new Date().toISOString(),
@@ -82,6 +90,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 },
                 following: [],
                 followers: [],
+                profileComplete,
             };
 
             // Save to database
@@ -98,6 +107,58 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         } catch (error) {
             console.error("Error registering:", error);
             set({ error: "Erro ao criar conta", isLoading: false });
+            return false;
+        }
+    },
+
+    completeProfile: async (name: string, cpf: string, phone: string) => {
+        try {
+            const currentUser = get().user;
+            if (!currentUser) {
+                set({ error: "Usuário não autenticado" });
+                return false;
+            }
+
+            set({ isLoading: true, error: null });
+
+            // Get users database
+            const usersDbJson = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
+            const usersDb = usersDbJson ? JSON.parse(usersDbJson) : {};
+
+            // Check if CPF already exists (by another user)
+            const cpfExists = Object.values(usersDb).some(
+                (u: any) => u.cpf === cpf && u.id !== currentUser.id
+            );
+            if (cpfExists) {
+                set({ error: "CPF já cadastrado", isLoading: false });
+                return false;
+            }
+
+            // Update user
+            const updates = {
+                name,
+                cpf,
+                phone,
+                profileComplete: true,
+            };
+
+            const updatedUser = { ...currentUser, ...updates };
+
+            // Update in database
+            if (usersDb[currentUser.email]) {
+                usersDb[currentUser.email] = {
+                    ...usersDb[currentUser.email],
+                    ...updates,
+                };
+                await AsyncStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(usersDb));
+            }
+
+            await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+            set({ user: updatedUser, isLoading: false });
+            return true;
+        } catch (error) {
+            console.error("Error completing profile:", error);
+            set({ error: "Erro ao completar perfil", isLoading: false });
             return false;
         }
     },

@@ -35,8 +35,11 @@
                 "ACCESS_WIFI_STATE",
                 "CHANGE_WIFI_STATE",
                 "ACCESS_FINE_LOCATION",
-                "ACCESS_COARSE_LOCATION"
-            ]
+                "ACCESS_COARSE_LOCATION",
+                "CAMERA",
+                "RECORD_AUDIO"
+            ],
+            "googleServicesFile": "./google-services.json"
         },
         "web": {
             "bundler": "metro",

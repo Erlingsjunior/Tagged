@@ -152,12 +152,14 @@ export const UserSchema = z.object({
     id: z.string(),
     email: z.string().email('Email inválido'),
     name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+    nickname: z.string().min(3, 'Apelido deve ter no mínimo 3 caracteres'),
     cpf: z.string()
         .min(11, 'CPF deve ter 11 dígitos')
         .max(14, 'CPF inválido')
         .refine((cpf) => validateCPF(cpf), {
             message: 'CPF inválido',
-        }),
+        })
+        .optional(), // CPF não é obrigatório no cadastro inicial
     avatar: z.string().optional(),
     phone: z.string().optional(),
     verified: z.boolean().default(false),
@@ -184,6 +186,7 @@ export const UserSchema = z.object({
         }),
     following: z.array(z.string()).default([]),
     followers: z.array(z.string()).default([]),
+    profileComplete: z.boolean().default(false), // Indica se o usuário completou o cadastro (CPF, Nome, Telefone)
 });
 
 export type User = z.infer<typeof UserSchema>;

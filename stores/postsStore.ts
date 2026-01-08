@@ -95,14 +95,14 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             set({ loading: true, error: null });
 
             // MIGRATION: Check if we need to clear old data
-            const migrationKey = "tagged_migration_v10";
+            const migrationKey = "tagged_migration_v12";
             const migrationDone = await AsyncStorage.getItem(migrationKey);
 
             if (!migrationDone) {
-                console.log("🔄 Running migration v10: estratégia CONSERVADORA de assinaturas...");
-                console.log("   📊 Posts < 1K: 100 assinaturas");
-                console.log("   📊 Posts 1K-5K: 1K-1.5K assinaturas (documento desbloqueado!)");
-                console.log("   📊 Posts 5K+: máximo 3K assinaturas (super seguro!)");
+                console.log("🔄 Running migration v12: Novo schema de usuário com nickname e profileComplete...");
+                console.log("   ✨ Usuários agora têm campo 'nickname' obrigatório");
+                console.log("   ✨ Campo 'profileComplete' indica se cadastro está completo");
+                console.log("   ✨ CPF agora é opcional no cadastro inicial");
                 console.log("   💾 Total: ~8-12K assinaturas = ~3-4 partições = AsyncStorage super leve!");
 
                 await AsyncStorage.multiRemove([
