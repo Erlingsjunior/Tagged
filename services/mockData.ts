@@ -101,6 +101,25 @@ const getRelevantImageUrl = (
 
 const statuses = ["active", "investigating", "resolved"] as const;
 
+// Criar lista fixa de autores mockados para garantir IDs consistentes
+const FIXED_AUTHORS = [
+    { id: "author_1", name: "Maria Silva", avatar: "https://i.pravatar.cc/150?img=1", verified: true },
+    { id: "author_2", name: "João Santos", avatar: "https://i.pravatar.cc/150?img=2", verified: false },
+    { id: "author_3", name: "Ana Costa", avatar: "https://i.pravatar.cc/150?img=3", verified: true },
+    { id: "author_4", name: "Pedro Oliveira", avatar: "https://i.pravatar.cc/150?img=4", verified: false },
+    { id: "author_5", name: "Carla Souza", avatar: "https://i.pravatar.cc/150?img=5", verified: true },
+    { id: "author_6", name: "Lucas Ferreira", avatar: "https://i.pravatar.cc/150?img=6", verified: false },
+    { id: "author_7", name: "Juliana Lima", avatar: "https://i.pravatar.cc/150?img=7", verified: true },
+    { id: "author_8", name: "Rafael Alves", avatar: "https://i.pravatar.cc/150?img=8", verified: false },
+    { id: "author_9", name: "Patricia Rocha", avatar: "https://i.pravatar.cc/150?img=9", verified: true },
+    { id: "author_10", name: "Bruno Martins", avatar: "https://i.pravatar.cc/150?img=10", verified: false },
+    { id: "author_11", name: "Fernanda Ribeiro", avatar: "https://i.pravatar.cc/150?img=11", verified: true },
+    { id: "author_12", name: "Gabriel Araújo", avatar: "https://i.pravatar.cc/150?img=12", verified: false },
+    { id: "author_13", name: "Camila Barbosa", avatar: "https://i.pravatar.cc/150?img=13", verified: true },
+    { id: "author_14", name: "Rodrigo Dias", avatar: "https://i.pravatar.cc/150?img=14", verified: false },
+    { id: "author_15", name: "Amanda Vieira", avatar: "https://i.pravatar.cc/150?img=15", verified: true },
+];
+
 // Gera posts mockados realistas
 const generateMockPost = (id: number): Post => {
     const category = faker.helpers.arrayElement(categories);
@@ -472,15 +491,7 @@ const generateMockPost = (id: number): Post => {
                   name: "Tagged Platform",
                   verified: true,
               }
-            : {
-                  id: faker.string.uuid(),
-                  name: faker.person.fullName(),
-                  avatar: `https://i.pravatar.cc/150?img=${faker.number.int({
-                      min: 1,
-                      max: 70,
-                  })}`,
-                  verified: faker.datatype.boolean(),
-              },
+            : FIXED_AUTHORS[id % FIXED_AUTHORS.length], // Usar autor fixo baseado no ID do post
         location: {
             city,
             state: faker.location.state({ abbreviated: true }),
@@ -596,16 +607,38 @@ export const generateMockUsers = () => {
 export const generateMockSignatures = (postId: string, totalSupports: number, allUsers: any[]) => {
     const signatures: any[] = [];
 
-    // Gera 80% do total de supports como assinaturas mockadas
-    // Sistema de particionamento robusto suporta milhões de assinaturas!
-    const mockSignaturesCount = Math.floor(totalSupports * 0.8);
+    /**
+     * 🎯 ESTRATÉGIA MVP: NÚMEROS IMPRESSIONANTES + DADOS LEVES
+     *
+     * Para demonstrar o app com números realistas (milhões de supports) sem
+     * estourar o AsyncStorage (~6-10MB):
+     *
+     * - `supports`: Números mockados impressionantes (2 mil, 270 mil, 30 milhões, 42 milhões)
+     * - `signatures`: Apenas 100 assinaturas REAIS para visualização no documento
+     *
+     * ✅ Mostra o potencial viral da plataforma
+     * ✅ Mantém AsyncStorage saudável
+     * ✅ Demonstra todas as features (documento, paginação, perfis)
+     * ✅ Explicação clara: "100 assinaturas mais recentes de X milhões"
+     */
 
-    console.log(`📝 Gerando ${mockSignaturesCount.toLocaleString()} assinaturas mockadas para post ${postId} (de ${totalSupports.toLocaleString()} supports)`);
+    const MAX_REAL_SIGNATURES = 100; // Apenas 100 assinaturas reais para visualização
+
+    if (totalSupports < 100) {
+        // Posts muito pequenos: sem assinaturas mockadas
+        console.log(`⏭️  Post ${postId}: ${totalSupports.toLocaleString()} supports - sem assinaturas mockadas`);
+        return signatures;
+    }
+
+    // Gerar apenas 100 assinaturas para visualização, independente do número de supports
+    const mockSignaturesCount = Math.min(MAX_REAL_SIGNATURES, totalSupports);
+
+    console.log(`📝 Gerando ${mockSignaturesCount} assinaturas para post ${postId} (contador: ${totalSupports.toLocaleString()} supports)`);
 
     for (let i = 0; i < mockSignaturesCount; i++) {
         // Escolher um usuário aleatório ou criar um novo
         let user;
-        if (i < allUsers.length && faker.datatype.boolean()) {
+        if (i < allUsers.length && Math.random() > 0.5) {
             user = allUsers[i % allUsers.length];
         } else {
             // Criar usuário temporário para assinatura
@@ -625,7 +658,8 @@ export const generateMockSignatures = (postId: string, totalSupports: number, al
         });
     }
 
-    console.log(`✅ ${mockSignaturesCount.toLocaleString()} assinaturas geradas com sucesso!`);
+    console.log(`✅ ${mockSignaturesCount} assinaturas geradas! (contador mostra ${totalSupports.toLocaleString()})`);
+    console.log(`   💡 Usuário verá: "100 assinaturas mais recentes de ${totalSupports.toLocaleString()}"`);
 
     return signatures;
 };

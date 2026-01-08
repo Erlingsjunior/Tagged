@@ -159,9 +159,21 @@ export default function UserProfileScreen() {
     }, [currentUser, profileUser]);
 
     const loadUserProfile = async () => {
+        console.log(`🔍 Carregando perfil do usuário ID: ${id}`);
         const usersDbJson = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
         const usersDb = usersDbJson ? JSON.parse(usersDbJson) : {};
+
+        console.log(`📚 UsersDB tem ${Object.keys(usersDb).length} usuários salvos`);
+
         const user = Object.values(usersDb).find((u: any) => u.id === id) as User;
+
+        if (user) {
+            console.log(`✅ Usuário encontrado: ${user.name}`);
+        } else {
+            console.log(`❌ Usuário com ID ${id} não encontrado no banco de dados`);
+            console.log('IDs disponíveis:', Object.values(usersDb).map((u: any) => u.id).join(', '));
+        }
+
         setProfileUser(user || null);
     };
 

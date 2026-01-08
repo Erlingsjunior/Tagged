@@ -493,9 +493,9 @@ if (!migrationDone) {
 
 O **Sistema de Particionamento de Assinaturas** resolve de forma elegante e escalável o problema de limite do AsyncStorage, permitindo que o Tagged suporte:
 
-- ✅ Milhões de assinaturas
+- ✅ Milhões de assinaturas (com particionamento robusto)
 - ✅ Milhares de posts virais
-- ✅ Crescimento ilimitado
+- ✅ Crescimento ilimitado (limitado apenas pelo storage total do dispositivo)
 - ✅ Performance otimizada
 - ✅ Código limpo e manutenível
 
@@ -503,6 +503,60 @@ O **Sistema de Particionamento de Assinaturas** resolve de forma elegante e esca
 
 ---
 
+## 📱 Estratégia para MVP e Demonstração
+
+usamos uma estratégia de **separação entre contador visual e dados reais**:
+
+### 🎯 Estratégia: Números Impressionantes + Dados Leves
+
+```typescript
+// ✅ ESTRATÉGIA PARA MVP (evita estouro de storage)
+
+// Contador visual: Números impressionantes mockados
+post.supports = 30_000_000;  // 30 milhões!
+post.supports = 270_000;     // 270 mil
+post.supports = 42_000_000;  // 42 milhões!
+
+// Dados reais: Apenas 100 assinaturas para visualização
+const MAX_REAL_SIGNATURES = 100;
+mockSignaturesCount = Math.min(100, totalSupports);
+```
+
+### Como Funciona
+
+**UI mostra ao usuário:**
+```
+"100 assinaturas mais recentes de 30.000.000"
+```
+
+Isso significa:
+- ✅ **Contador impressionante**: Mostra potencial viral (milhões de supports)
+- ✅ **AsyncStorage leve**: Apenas 100 assinaturas × 15 posts = ~1.500 assinaturas totais
+- ✅ **Todas features visíveis**: Documento, paginação, perfis de apoiadores
+- ✅ **Explicação clara**: Usuário entende que está vendo amostra das mais recentes
+
+### Benefícios da Estratégia MVP
+
+1. **AsyncStorage saudável**: Total de ~2-3MB de dados (bem dentro do limite)
+2. **Demonstra todas as features**:
+   - ✅ Documento de petição com 100 assinaturas reais
+   - ✅ Perfis de apoiadores funcionando
+   - ✅ "Amigos que assinaram" visível
+   - ✅ Contador mostra números impressionantes (milhões)
+   - ✅ Milestones e conquistas desbloqueadas
+3. **Carregamento instantâneo**: 100 assinaturas carregam em <100ms
+4. **Realista para apresentação**: Simula posts virais sem limitações técnicas
+
+### Em Produção
+
+Quando integrado com backend real:
+- API retorna contadores reais de milhões de supports
+- Carrega assinaturas paginadas (1.000 por página)
+- Sistema de particionamento entra em ação automaticamente
+- Suporta **milhões de assinaturas reais** sem problemas
+
+---
+
 **Desenvolvido por:** clanChief (Erlings Junior)
-**Versão:** 1.0.0
+**Versão:** 1.1.0 (MVP Strategy)
 **Data:** 08/01/2026

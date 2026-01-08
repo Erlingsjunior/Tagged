@@ -95,12 +95,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             set({ loading: true, error: null });
 
             // MIGRATION: Check if we need to clear old data
-            const migrationKey = "tagged_migration_v7";
+            const migrationKey = "tagged_migration_v8";
             const migrationDone = await AsyncStorage.getItem(migrationKey);
 
             if (!migrationDone) {
-                console.log("🔄 Running migration v7: implementando sistema robusto de particionamento de assinaturas...");
-                console.log("   🚀 Agora suportamos MILHÕES de assinaturas com sharding inteligente!");
+                console.log("🔄 Running migration v8: corrigindo IDs de autores para serem consistentes...");
+                console.log("   👤 Agora perfis de usuários aparecem corretamente!");
 
                 await AsyncStorage.multiRemove([
                     STORAGE_KEYS.POSTS,
@@ -113,13 +113,14 @@ export const usePostsStore = create<PostsState>((set, get) => ({
                     "tagged_migration_v4",
                     "tagged_migration_v5",
                     "tagged_migration_v6",
+                    "tagged_migration_v7",
                 ]);
 
                 // Limpar partições antigas se existirem
                 await signatureStorageManager.clearAllPartitions();
 
                 await AsyncStorage.setItem(migrationKey, "done");
-                console.log("✅ Migration v7 completed!");
+                console.log("✅ Migration v8 completed!");
             }
 
             const [storedPosts, storedSaved, storedBaseSupports] = await Promise.all([
@@ -294,6 +295,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             STORAGE_KEYS.BASE_SUPPORTS,
             "tagged_users_db",
             "tagged_migration_v7",
+            "tagged_migration_v8",
         ]);
 
         // Limpar partições de assinaturas

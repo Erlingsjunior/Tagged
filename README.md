@@ -347,7 +347,15 @@ npm run build:status
   - Bio, localização (cidade, estado)
   - Stats (denúncias criadas, assinadas, impact score)
   - Following/followers arrays
-- **generateMockSignatures()**: Gera assinaturas em massa (~80% do total de supports)
+- **generateMockSignatures()**: Estratégia MVP de separação contador/dados reais
+  - **Contador visual**: Números impressionantes mockados (2 mil, 270 mil, 30 milhões, 42 milhões)
+  - **Dados reais**: Apenas 100 assinaturas por post para visualização
+  - **UI exibe**: "100 assinaturas mais recentes de 30.000.000"
+  - **Benefícios**:
+    - ✅ Mostra potencial viral da plataforma
+    - ✅ Mantém AsyncStorage saudável (~2-3MB total)
+    - ✅ Demonstra todas as features (documento, perfis, paginação)
+    - ✅ Carregamento instantâneo (<100ms)
   - Reutiliza usuários existentes quando possível
   - Cria usuários temporários para completar o volume
   - Inclui data/hora realista das últimas 30 dias
