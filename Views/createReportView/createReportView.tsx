@@ -18,6 +18,7 @@ import { FilePicker } from "../../components/UI/FilePicker/filePicker";
 import { AnonymousToggle } from "../../components/UI/AnonymousToggle/anonymousToggle";
 import { BoxText } from "../../components/UI/BoxText/boxText";
 import { Button } from "../../components/UI/Button/button";
+import CompleteProfileModal from "../../components/CompleteProfileModal";
 
 // Importando constants
 import { theme } from "../../constants/Theme";
@@ -136,6 +137,7 @@ export const CreateReportView: React.FC = () => {
         evidenceFiles: [],
         isAnonymous: false,
     });
+    const [showCompleteProfile, setShowCompleteProfile] = useState(false);
 
     // Função para atualizar campos do formulário
     const updateField = (field: keyof CreateReportFormData, value: any) => {
@@ -187,6 +189,12 @@ export const CreateReportView: React.FC = () => {
     const submitReport = async () => {
         if (!user) {
             Alert.alert("Erro", "Você precisa estar logado para criar uma denúncia");
+            return;
+        }
+
+        // Verificar se perfil está completo (apenas para posts não-anônimos)
+        if (!formData.isAnonymous && !user.profileComplete) {
+            setShowCompleteProfile(true);
             return;
         }
 
@@ -556,6 +564,17 @@ export const CreateReportView: React.FC = () => {
                     </ButtonWrapper>
                 </ButtonContainer>
             </KeyboardAvoidingView>
+
+            <CompleteProfileModal
+                visible={showCompleteProfile}
+                onClose={() => setShowCompleteProfile(false)}
+                onSuccess={() => {
+                    setShowCompleteProfile(false);
+                    // Tentar enviar novamente após completar perfil
+                    submitReport();
+                }}
+                message="Complete seu perfil para criar denúncias públicas! (Posts anônimos não precisam)"
+            />
         </Container>
     );
 };

@@ -14,14 +14,13 @@ import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuração do Firebase
-// TODO: Substituir com suas credenciais do Firebase Console
 const firebaseConfig = {
-  apiKey: "AIzaSyC-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", // TODO: Pegar do Firebase Console
+  apiKey: "AIzaSyBCyzGJg1T0nRTO4kZLafklRmemdIYYOLQ",
   authDomain: "taggedapp-12645.firebaseapp.com",
   projectId: "taggedapp-12645",
-  storageBucket: "taggedapp-12645.appspot.com",
-  messagingSenderId: "xxxxxxxxxxxx", // TODO: Pegar do Firebase Console
-  appId: "1:xxxxxxxxxxxx:web:xxxxxxxxxxxxxxxxxxxx", // TODO: Pegar do Firebase Console
+  storageBucket: "taggedapp-12645.firebasestorage.app",
+  messagingSenderId: "100939753232",
+  appId: "1:100939753232:android:58d104a5fb8f52ec87a795",
 };
 
 // Inicializar Firebase apenas uma vez

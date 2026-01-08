@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import styled from 'styled-components/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CompleteProfileModal from '../../components/CompleteProfileModal';
 import { useAuthStore } from '../../stores/authStore';
 import { usePostsStore } from '../../stores/postsStore';
 import { PostCard } from '../../components/UI/PostCard';
@@ -150,6 +151,8 @@ export default function UserProfileScreen() {
     const [profileUser, setProfileUser] = useState<User | null>(null);
     const [activeTab, setActiveTab] = useState<'posts' | 'signed'>('posts');
     const [isFollowing, setIsFollowing] = useState(false);
+    const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+    const [pendingPostId, setPendingPostId] = useState<string | null>(null);
 
     useEffect(() => {
         loadUserProfile();
@@ -178,6 +181,29 @@ export default function UserProfileScreen() {
         }
 
         setProfileUser(user || null);
+    };
+
+    const handleLike = (postId: string) => {
+        if (!currentUser) return;
+
+        // Verificar se perfil está completo
+        if (!currentUser.profileComplete) {
+            setPendingPostId(postId);
+            setShowCompleteProfile(true);
+            return;
+        }
+
+        toggleSignature(postId, currentUser.id, currentUser.name, currentUser.avatar);
+    };
+
+    const handleProfileCompleted = () => {
+        setShowCompleteProfile(false);
+
+        // Dar like no post pendente
+        if (pendingPostId && currentUser) {
+            toggleSignature(pendingPostId, currentUser.id, currentUser.name, currentUser.avatar);
+            setPendingPostId(null);
+        }
     };
 
     const handleFollow = async () => {
@@ -304,7 +330,7 @@ export default function UserProfileScreen() {
                             <PostCard
                                 key={post.id}
                                 post={post}
-                                onLike={() => toggleSignature(post.id, currentUser!.id, currentUser!.name, currentUser!.avatar)}
+                                onLike={() => handleLike(post.id)}
                                 onSave={() => toggleSave(post.id)}
                                 onComment={() => router.push(`/comments/${post.id}`)}
                                 onShare={() => {}}
@@ -318,6 +344,16 @@ export default function UserProfileScreen() {
                     )}
                 </View>
             </ScrollView>
+
+            <CompleteProfileModal
+                visible={showCompleteProfile}
+                onClose={() => {
+                    setShowCompleteProfile(false);
+                    setPendingPostId(null);
+                }}
+                onSuccess={handleProfileCompleted}
+                message="Complete seu perfil para dar likes e apoiar denúncias!"
+            />
         </Container>
     );
 }

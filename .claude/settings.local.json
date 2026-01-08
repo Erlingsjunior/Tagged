@@ -24,7 +24,8 @@
       "Bash(eas --version:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(npm run start:*)"
     ]
   }
 }
