@@ -269,8 +269,27 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     },
 
     refreshPosts: async () => {
+        console.log("🔄 Pull to Refresh: Recriando todos os dados mockados...");
+
+        // Limpar TODOS os dados do AsyncStorage para forçar recriação completa
+        await AsyncStorage.multiRemove([
+            STORAGE_KEYS.POSTS,
+            STORAGE_KEYS.SIGNATURES,
+            STORAGE_KEYS.SAVED,
+            STORAGE_KEYS.BASE_SUPPORTS,
+            "tagged_users_db",
+            "tagged_migration_v5",
+        ]);
+
+        console.log("✅ Dados limpos! Recriando com novos dados mockados...");
+
+        // Delay para mostrar o loading
         await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // Recarregar tudo do zero (vai gerar novos usuários e assinaturas)
         await get().loadPosts();
+
+        console.log("✅ Pull to Refresh completo! Novos dados carregados.");
     },
 
     toggleSignature: async (postId: string, userId: string, userName: string, userAvatar?: string) => {
