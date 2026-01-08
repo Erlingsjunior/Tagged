@@ -15,6 +15,7 @@ import { Audio } from "expo-av";
 import styled from "styled-components/native";
 import { usePostsStore } from "../../stores/postsStore";
 import { useAuthStore } from "../../stores/authStore";
+import { usePetition } from "../../hooks/petition";
 import { theme } from "../../constants/Theme";
 import { mockComments } from "../../services/mockData";
 import { CategoryBadge } from "../../components/UI/CategoryBadge";
@@ -435,6 +436,13 @@ export default function PostDetailsScreen() {
         );
     }
 
+    const {
+        canViewPetition,
+        canDownloadPetition,
+        generatePetitionDocument,
+        hasReachedSignatureThreshold,
+    } = usePetition(post);
+
     const signatures = getSignatures(post.id);
     const userHasSigned = user ? hasUserSigned(post.id, user.id) : false;
     const comments = mockComments.get(post.id) || [];
@@ -548,20 +556,25 @@ export default function PostDetailsScreen() {
                 <InfoSection>
                     <PostTitle>{post.title}</PostTitle>
 
-                    <AuthorInfo>
-                        <Avatar>
-                            <AvatarText>
-                                {post.author.name.charAt(0).toUpperCase()}
-                            </AvatarText>
-                        </Avatar>
-                        <View>
-                            <AuthorName>{post.author.name}</AuthorName>
-                            <PostMeta>
-                                {post.location.city}, {post.location.state} •{" "}
-                                {getTimeAgo(post.createdAt)}
-                            </PostMeta>
-                        </View>
-                    </AuthorInfo>
+                    <TouchableOpacity
+                        onPress={() => !post.isAnonymous && router.push(`/user/${post.author.id}`)}
+                        disabled={post.isAnonymous}
+                    >
+                        <AuthorInfo>
+                            <Avatar>
+                                <AvatarText>
+                                    {post.author.name.charAt(0).toUpperCase()}
+                                </AvatarText>
+                            </Avatar>
+                            <View>
+                                <AuthorName>{post.author.name}</AuthorName>
+                                <PostMeta>
+                                    {post.location.city}, {post.location.state} •{" "}
+                                    {getTimeAgo(post.createdAt)}
+                                </PostMeta>
+                            </View>
+                        </AuthorInfo>
+                    </TouchableOpacity>
 
                     <Description>{post.content}</Description>
                 </InfoSection>
@@ -1022,7 +1035,56 @@ export default function PostDetailsScreen() {
                     </SignaturesSection>
                 )}
 
-                
+                {hasReachedSignatureThreshold() && (
+                    <View style={{ padding: theme.spacing.md }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (canViewPetition()) {
+                                    router.push(`/petition/${post.id}`);
+                                } else {
+                                    alert('Você precisa assinar esta causa para ver a petição oficial.');
+                                }
+                            }}
+                            style={{
+                                backgroundColor: theme.colors.primary,
+                                padding: theme.spacing.md,
+                                borderRadius: theme.borderRadius.md,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: theme.spacing.sm,
+                            }}
+                        >
+                            <Ionicons name="document-text" size={20} color={theme.colors.surface} />
+                            <Text style={{ color: theme.colors.surface, fontWeight: 'bold', fontSize: 16 }}>
+                                📄 Ver Petição Oficial ({formatNumber(post.stats.supports)} assinaturas)
+                            </Text>
+                        </TouchableOpacity>
+                        {canDownloadPetition() && (
+                            <TouchableOpacity
+                                onPress={() => {
+                                    const doc = generatePetitionDocument();
+                                    console.log('Petition document generated:', doc.substring(0, 200));
+                                    alert('Download será implementado em breve!');
+                                }}
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 1,
+                                    borderColor: theme.colors.primary,
+                                    padding: theme.spacing.sm,
+                                    borderRadius: theme.borderRadius.md,
+                                    marginTop: theme.spacing.sm,
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <Text style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
+                                    💾 Baixar Documento Oficial
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
+
                 {comments.length > 0 && (
                     <CommentsSection>
                         <SectionTitle>
