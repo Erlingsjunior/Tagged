@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { faker } from "@faker-js/faker/locale/pt_BR";
 import { Post, Signature } from "../types/index";
-import { mockPosts } from "../services/mockData";
+import { mockPosts, generateMockUsers, generateMockSignatures } from "../services/mockData";
 
 interface PostsState {
     posts: Post[];
@@ -121,11 +122,81 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             // Se já tem posts salvos, manter apenas eles
             let posts = storedPosts ? JSON.parse(storedPosts) : [];
 
+            // Inicializar signaturesData primeiro
+            let signaturesData: Record<string, Signature[]> = storedSignatures ? JSON.parse(storedSignatures) : {};
+
             // Se não há nenhum post (primeira inicialização), carregar mockPosts
             if (posts.length === 0 && !storedPosts) {
                 posts = mockPosts;
+
+                // Gerar e salvar usuários mockados
+                const USERS_DB_KEY = 'tagged_users_db';
+                const usersDbJson = await AsyncStorage.getItem(USERS_DB_KEY);
+                let existingUsersDb = usersDbJson ? JSON.parse(usersDbJson) : {};
+
+                // Gerar usuários apenas se ainda não existem
+                if (Object.keys(existingUsersDb).length === 0) {
+                    const mockUsers = generateMockUsers();
+                    await AsyncStorage.setItem(USERS_DB_KEY, JSON.stringify(mockUsers));
+                    existingUsersDb = mockUsers; // Atualizar para usar na geração de assinaturas
+                    console.log('✅ Mock users created and saved!');
+                }
+
+                // Gerar assinaturas mockadas para posts com alto número de supports
+                if (!storedSignatures) {
+                    const allUsersArray = Object.values(existingUsersDb);
+                    let tempUsersCreated = 0;
+
+                    posts.forEach((post: Post) => {
+                        if (post.stats.supports > 1000) {
+                            const mockSigs = generateMockSignatures(post.id, post.stats.supports, allUsersArray);
+                            const signaturesForPost = mockSigs.map(sig => {
+                                // Se o usuário da assinatura não existe no usersDb, criar
+                                if (sig.userId.startsWith('temp_user_')) {
+                                    const tempEmail = `temp_${tempUsersCreated}@tagged.com`;
+                                    existingUsersDb[tempEmail] = {
+                                        id: sig.userId,
+                                        email: tempEmail,
+                                        name: sig.userName,
+                                        cpf: faker.string.numeric(11),
+                                        role: 'user',
+                                        verified: false,
+                                        createdAt: new Date().toISOString(),
+                                        stats: {
+                                            reportsCreated: 0,
+                                            reportsSigned: 1,
+                                            impactScore: 2,
+                                        },
+                                        following: [],
+                                        followers: [],
+                                        password: 'password123',
+                                    };
+                                    tempUsersCreated++;
+                                }
+
+                                return {
+                                    userId: sig.userId,
+                                    userName: sig.userName,
+                                    signedAt: sig.signedAt,
+                                };
+                            });
+                            signaturesData[post.id] = signaturesForPost as any;
+                        }
+                    });
+
+                    // Salvar usuários temporários criados
+                    if (tempUsersCreated > 0) {
+                        await AsyncStorage.setItem(USERS_DB_KEY, JSON.stringify(existingUsersDb));
+                        console.log(`✅ ${tempUsersCreated} temporary users created for signatures!`);
+                    }
+
+                    // Salvar assinaturas mockadas
+                    if (Object.keys(signaturesData).length > 0) {
+                        await AsyncStorage.setItem(STORAGE_KEYS.SIGNATURES, JSON.stringify(signaturesData));
+                        console.log('✅ Mock signatures created and saved!');
+                    }
+                }
             }
-            const signaturesData: Record<string, Signature[]> = storedSignatures ? JSON.parse(storedSignatures) : {};
             const signatures = new Map<string, Signature[]>(Object.entries(signaturesData));
             const savedPosts = storedSaved ? new Set<string>(JSON.parse(storedSaved)) : new Set<string>();
 

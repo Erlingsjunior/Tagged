@@ -10,7 +10,7 @@ interface AuthState {
 
     // Actions
     login: (email: string, password: string) => Promise<boolean>;
-    register: (email: string, password: string, name: string) => Promise<boolean>;
+    register: (email: string, password: string, name: string, cpf: string) => Promise<boolean>;
     logout: () => Promise<void>;
     loadUser: () => Promise<void>;
     updateProfile: (updates: Partial<User>) => Promise<void>;
@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
     },
 
-    register: async (email: string, password: string, name: string) => {
+    register: async (email: string, password: string, name: string, cpf: string) => {
         try {
             set({ isLoading: true, error: null });
 
@@ -59,11 +59,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 return false;
             }
 
+            // Check if CPF already exists
+            const cpfExists = Object.values(usersDb).some((u: any) => u.cpf === cpf);
+            if (cpfExists) {
+                set({ error: "CPF já cadastrado", isLoading: false });
+                return false;
+            }
+
             // Create new user
             const newUser: User = {
                 id: Date.now().toString(),
                 email,
                 name,
+                cpf,
+                role: 'user',
                 verified: false,
                 createdAt: new Date().toISOString(),
                 stats: {
@@ -71,6 +80,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     reportsSigned: 0,
                     impactScore: 0,
                 },
+                following: [],
+                followers: [],
             };
 
             // Save to database

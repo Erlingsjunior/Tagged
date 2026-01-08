@@ -534,6 +534,98 @@ export const mockPosts: Post[] = Array.from({ length: 15 }, (_, i) =>
     generateMockPost(i + 1)
 );
 
+// Gera usuários mockados baseados nos posts
+export const generateMockUsers = () => {
+    const users: Record<string, any> = {};
+
+    // Extrair todos os autores únicos dos posts (exceto anônimos)
+    const uniqueAuthors = mockPosts
+        .filter(post => !post.isAnonymous)
+        .map(post => post.author)
+        .reduce((acc: any[], author) => {
+            if (!acc.some(a => a.id === author.id)) {
+                acc.push(author);
+            }
+            return acc;
+        }, []);
+
+    // Criar usuário completo para cada autor
+    uniqueAuthors.forEach((author, index) => {
+        const email = `user${index + 1}@tagged.com`;
+        const cpf = faker.string.numeric(11);
+
+        // Contar quantas denúncias este autor criou
+        const reportsCreated = mockPosts.filter(
+            p => !p.isAnonymous && p.author.id === author.id
+        ).length;
+
+        // Contar quantas denúncias este autor assinou (aleatório)
+        const reportsSigned = faker.number.int({ min: 5, max: 50 });
+
+        users[email] = {
+            id: author.id,
+            email: email,
+            name: author.name,
+            cpf: cpf,
+            avatar: author.avatar,
+            phone: faker.phone.number(),
+            verified: author.verified || false,
+            role: 'user',
+            createdAt: faker.date.past({ years: 2 }).toISOString(),
+            bio: faker.lorem.sentence(),
+            location: {
+                city: faker.location.city(),
+                state: faker.location.state({ abbreviated: true }),
+                country: 'Brasil',
+            },
+            stats: {
+                reportsCreated: reportsCreated,
+                reportsSigned: reportsSigned,
+                impactScore: (reportsCreated * 10) + (reportsSigned * 2),
+            },
+            following: [],
+            followers: [],
+            password: 'password123', // Senha padrão para testes
+        };
+    });
+
+    return users;
+};
+
+// Gera assinaturas mockadas para posts com alto número de supports
+export const generateMockSignatures = (postId: string, totalSupports: number, allUsers: any[]) => {
+    const signatures: any[] = [];
+
+    // Se o post tem muitos supports, gerar assinaturas mockadas
+    // Vamos gerar 80% do total de supports como assinaturas mockadas
+    const mockSignaturesCount = Math.floor(totalSupports * 0.8);
+
+    for (let i = 0; i < mockSignaturesCount; i++) {
+        // Escolher um usuário aleatório ou criar um novo
+        let user;
+        if (i < allUsers.length && faker.datatype.boolean()) {
+            user = allUsers[i % allUsers.length];
+        } else {
+            // Criar usuário temporário para assinatura
+            const tempCpf = faker.string.numeric(11);
+            user = {
+                id: `temp_user_${postId}_${i}`,
+                name: faker.person.fullName(),
+                cpf: tempCpf,
+                email: `supporter${i}@tagged.com`,
+            };
+        }
+
+        signatures.push({
+            userId: user.id,
+            userName: user.name,
+            signedAt: faker.date.recent({ days: 30 }),
+        });
+    }
+
+    return signatures;
+};
+
 // Generate mock comments for posts - with varied and realistic content
 export const generateMockComments = (
     postId: string,

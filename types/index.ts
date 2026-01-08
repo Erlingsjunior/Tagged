@@ -121,14 +121,47 @@ export type Milestone = z.infer<typeof MilestoneSchema>;
 export type ReportUpdate = z.infer<typeof ReportUpdateSchema>;
 export type ActionStatus = z.infer<typeof ActionStatusSchema>;
 
+// Helper: Validação de CPF brasileiro
+const validateCPF = (cpf: string): boolean => {
+    cpf = cpf.replace(/[^\d]/g, '');
+
+    if (cpf.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+        sum += parseInt(cpf.charAt(i)) * (10 - i);
+    }
+    let digit = 11 - (sum % 11);
+    if (digit > 9) digit = 0;
+    if (digit !== parseInt(cpf.charAt(9))) return false;
+
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+        sum += parseInt(cpf.charAt(i)) * (11 - i);
+    }
+    digit = 11 - (sum % 11);
+    if (digit > 9) digit = 0;
+    if (digit !== parseInt(cpf.charAt(10))) return false;
+
+    return true;
+};
+
 // User Schema
 export const UserSchema = z.object({
     id: z.string(),
-    email: z.string(),
-    name: z.string(),
+    email: z.string().email('Email inválido'),
+    name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+    cpf: z.string()
+        .min(11, 'CPF deve ter 11 dígitos')
+        .max(14, 'CPF inválido')
+        .refine((cpf) => validateCPF(cpf), {
+            message: 'CPF inválido',
+        }),
     avatar: z.string().optional(),
     phone: z.string().optional(),
     verified: z.boolean().default(false),
+    role: z.enum(['user', 'admin']).default('user'),
     createdAt: z.string(),
     bio: z.string().optional(),
     location: z
@@ -149,6 +182,8 @@ export const UserSchema = z.object({
             reportsSigned: 0,
             impactScore: 0,
         }),
+    following: z.array(z.string()).default([]),
+    followers: z.array(z.string()).default([]),
 });
 
 export type User = z.infer<typeof UserSchema>;

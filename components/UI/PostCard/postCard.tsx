@@ -32,6 +32,7 @@ interface PostCardProps {
     onShare: (postId: string) => void;
     onPress?: (postId: string) => void;
     onChat?: (post: Post) => void;
+    onAuthorPress?: (authorId: string) => void;
     isLiked?: boolean;
     isSaved?: boolean;
 }
@@ -374,6 +375,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     onShare,
     onPress,
     onChat,
+    onAuthorPress,
     isLiked = false,
     isSaved = false,
 }) => {
@@ -552,18 +554,24 @@ export const PostCard: React.FC<PostCardProps> = ({
 
                 <ContentSection>
                     <Header>
-                        <Avatar>
-                            <AvatarText>
-                                {post.author.name.charAt(0).toUpperCase()}
-                            </AvatarText>
-                        </Avatar>
-                        <UserInfo>
-                            <UserName>{post.author.name}</UserName>
-                            <PostMeta>
-                                {post.location.city}, {post.location.state} •{" "}
-                                {getTimeAgo(post.createdAt)}
-                            </PostMeta>
-                        </UserInfo>
+                        <TouchableOpacity
+                            onPress={() => !post.isAnonymous && onAuthorPress?.(post.author.id)}
+                            disabled={post.isAnonymous}
+                            style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+                        >
+                            <Avatar>
+                                <AvatarText>
+                                    {post.author.name.charAt(0).toUpperCase()}
+                                </AvatarText>
+                            </Avatar>
+                            <UserInfo>
+                                <UserName>{post.author.name}</UserName>
+                                <PostMeta>
+                                    {post.location.city}, {post.location.state} •{" "}
+                                    {getTimeAgo(post.createdAt)}
+                                </PostMeta>
+                            </UserInfo>
+                        </TouchableOpacity>
                         <View
                             style={{
                                 flexDirection: "row",
