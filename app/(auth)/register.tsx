@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import styled from "styled-components/native";
 import { useAuthStore } from "../../stores/authStore";
 import { theme } from "../../constants/Theme";
+import { UserSchema } from "../../types";
 
 const Container = styled(SafeAreaView)`
     flex: 1;
@@ -93,17 +94,32 @@ const TermsLink = styled(Text)`
     font-weight: bold;
 `;
 
+const formatCPF = (text: string) => {
+    const numbers = text.replace(/\D/g, '');
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+};
+
 export default function RegisterScreen() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [cpf, setCpf] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const router = useRouter();
     const { register, isLoading, error } = useAuthStore();
 
     const handleRegister = async () => {
-        if (!name || !email || !password || !confirmPassword) {
+        if (!name || !email || !cpf || !password || !confirmPassword) {
             Alert.alert("Erro", "Preencha todos os campos");
+            return;
+        }
+
+        const cpfValidation = UserSchema.shape.cpf.safeParse(cpf);
+        if (!cpfValidation.success) {
+            Alert.alert("Erro", cpfValidation.error.errors[0].message);
             return;
         }
 
@@ -117,7 +133,7 @@ export default function RegisterScreen() {
             return;
         }
 
-        const success = await register(email, password, name);
+        const success = await register(email, password, name, cpf);
         if (success) {
             Alert.alert(
                 "Bem-vindo ao Tagged!",
@@ -154,6 +170,16 @@ export default function RegisterScreen() {
                         onChangeText={setEmail}
                         autoCapitalize="none"
                         keyboardType="email-address"
+                        editable={!isLoading}
+                    />
+
+                    <Input
+                        placeholder="CPF (000.000.000-00)"
+                        placeholderTextColor={theme.colors.text.secondary}
+                        value={cpf}
+                        onChangeText={(text) => setCpf(formatCPF(text))}
+                        keyboardType="numeric"
+                        maxLength={14}
                         editable={!isLoading}
                     />
 
