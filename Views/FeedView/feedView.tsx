@@ -180,6 +180,10 @@ export const FeedView: React.FC = () => {
         router.push(`/chat/${conversation.id}`);
     };
 
+    const handleAuthorPress = (authorId: string) => {
+        router.push(`/user/${authorId}`);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <SearchBar
@@ -198,6 +202,7 @@ export const FeedView: React.FC = () => {
                         onShare={handleShare}
                         onPress={handlePostPress}
                         onChat={handleChat}
+                        onAuthorPress={handleAuthorPress}
                         isLiked={user ? hasUserSigned(item.id, user.id) : false}
                         isSaved={savedPosts.has(item.id)}
                     />

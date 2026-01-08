@@ -119,6 +119,10 @@ export default function SignedPostsScreen() {
         router.push(`/postDetails/${postId}`);
     };
 
+    const handleAuthorPress = (authorId: string) => {
+        router.push(`/user/${authorId}`);
+    };
+
     if (!user) {
         return null;
     }
@@ -160,6 +164,7 @@ export default function SignedPostsScreen() {
                             onComment={() => handleComment(item.id)}
                             onShare={() => handleShare(item)}
                             onSave={() => handleSave(item.id)}
+                            onAuthorPress={handleAuthorPress}
                         />
                     )}
                     refreshControl={
