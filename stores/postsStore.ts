@@ -94,21 +94,23 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             set({ loading: true, error: null });
 
             // MIGRATION: Check if we need to clear old data
-            const migrationKey = "tagged_migration_v4";
+            const migrationKey = "tagged_migration_v5";
             const migrationDone = await AsyncStorage.getItem(migrationKey);
 
             if (!migrationDone) {
-                console.log("🔄 Running migration v4: clearing old data and regenerating with new distribution...");
+                console.log("🔄 Running migration v5: clearing old data and regenerating mock signatures...");
                 await AsyncStorage.multiRemove([
                     STORAGE_KEYS.POSTS,
                     STORAGE_KEYS.SIGNATURES,
                     STORAGE_KEYS.SAVED,
                     STORAGE_KEYS.BASE_SUPPORTS,
+                    "tagged_users_db",
                     "tagged_migration_v2",
                     "tagged_migration_v3",
+                    "tagged_migration_v4",
                 ]);
                 await AsyncStorage.setItem(migrationKey, "done");
-                console.log("✅ Migration v4 completed!");
+                console.log("✅ Migration v5 completed!");
             }
 
             const [storedPosts, storedSignatures, storedSaved, storedBaseSupports] = await Promise.all([
