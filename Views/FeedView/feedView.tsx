@@ -18,6 +18,7 @@ export const FeedView: React.FC = () => {
         savedPosts,
         loading,
         loadPosts,
+        refreshPosts,
         toggleSignature,
         toggleSave,
         hasUserSigned,
@@ -210,7 +211,7 @@ export const FeedView: React.FC = () => {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshing={loading}
-                onRefresh={loadPosts}
+                onRefresh={refreshPosts}
                 removeClippedSubviews={false}
                 windowSize={21}
                 maxToRenderPerBatch={10}
