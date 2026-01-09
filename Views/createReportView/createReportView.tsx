@@ -18,6 +18,9 @@ import { FilePicker } from "../../components/UI/FilePicker/filePicker";
 import { AnonymousToggle } from "../../components/UI/AnonymousToggle/anonymousToggle";
 import { BoxText } from "../../components/UI/BoxText/boxText";
 import { Button } from "../../components/UI/Button/button";
+import CompleteProfileModal from "../../components/CompleteProfileModal";
+import MediaPicker from "../../components/MediaPicker";
+import { UploadResult } from "../../services/firebaseStorageService";
 
 // Importando constants
 import { theme } from "../../constants/Theme";
@@ -71,6 +74,7 @@ interface CreateReportFormData {
     category: string;
     evidenceFiles: FilePickerFile[];
     isAnonymous: boolean;
+    uploadedMedia: UploadResult[]; // URLs das mídias no Firebase Storage
 }
 
 // Dados mockados das categorias
@@ -135,7 +139,10 @@ export const CreateReportView: React.FC = () => {
         category: "",
         evidenceFiles: [],
         isAnonymous: false,
+        uploadedMedia: [],
     });
+    const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+    const [postId] = useState(`post-${Date.now()}`); // ID temporário para upload
 
     // Função para atualizar campos do formulário
     const updateField = (field: keyof CreateReportFormData, value: any) => {
@@ -190,10 +197,16 @@ export const CreateReportView: React.FC = () => {
             return;
         }
 
+        // Verificar se perfil está completo (apenas para posts não-anônimos)
+        if (!formData.isAnonymous && !user.profileComplete) {
+            setShowCompleteProfile(true);
+            return;
+        }
+
         try {
             // Criar o post
             const newPost: Post = {
-                id: "", // Será gerado pelo store
+                id: postId, // Usar o ID temporário que foi usado no upload
                 title: formData.title,
                 content: formData.description,
                 category: formData.category as any,
@@ -220,7 +233,11 @@ export const CreateReportView: React.FC = () => {
                     comments: 0,
                     supports: 0,
                 },
-                media: [],
+                media: formData.uploadedMedia.map(upload => ({
+                    type: upload.type as any,
+                    url: upload.url,
+                    thumbnailUrl: upload.url, // Para imagens, a thumbnail é a mesma URL
+                })),
                 tags: [],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
@@ -316,39 +333,24 @@ export const CreateReportView: React.FC = () => {
                             title='Evidências'
                             size='medium'
                         >
-                            Anexe fotos, vídeos, documentos ou áudios que
-                            comprovem sua denúncia. Todos os arquivos são
-                            criptografados.
+                            Anexe fotos e vídeos que comprovem sua denúncia.
+                            Os arquivos são enviados de forma segura para o Firebase Storage.
                         </BoxText>
 
-                        <FilePicker
-                            files={formData.evidenceFiles.map((file) => ({
-                                id: file.id,
-                                name: file.name,
-                                type: file.type as "image" | "video" | "document" | "audio",
-                                size: `${(file.size / 1024).toFixed(2)} KB`,
-                                uri: file.uri,
-                                mimeType: file.mimeType,
-                            }))}
+                        <MediaPicker
+                            postId={postId}
                             maxFiles={5}
-                            allowedTypes={["image", "video", "document"]}
-                            maxFileSize={10}
-                            onFilesChange={(files) =>
-                                updateField("evidenceFiles", files.map((f) => ({
-                                    id: f.id,
-                                    name: f.name,
-                                    uri: f.uri || "",
-                                    type: f.type,
-                                    size: parseFloat(f.size) || 0,
-                                    mimeType: f.mimeType,
-                                })))
-                            }
-                            placeholder='Toque para adicionar evidências'
+                            allowImages={true}
+                            allowVideos={true}
+                            onUploadComplete={(results) => {
+                                console.log('✅ Upload completo:', results);
+                                updateField("uploadedMedia", results);
+                            }}
                         />
 
                         <BoxText variant='neutral' size='small' borderless>
-                            💡 Dica: Arquivos de alta qualidade ajudam na
-                            análise. Formatos aceitos: JPG, PNG, PDF, MP4, DOC.
+                            💡 Dica: Fotos e vídeos de boa qualidade ajudam na análise.
+                            Limites: 5 arquivos, 2MB por foto, 15MB por vídeo (máx 30 segundos).
                         </BoxText>
                     </View>
                 );
@@ -556,6 +558,17 @@ export const CreateReportView: React.FC = () => {
                     </ButtonWrapper>
                 </ButtonContainer>
             </KeyboardAvoidingView>
+
+            <CompleteProfileModal
+                visible={showCompleteProfile}
+                onClose={() => setShowCompleteProfile(false)}
+                onSuccess={() => {
+                    setShowCompleteProfile(false);
+                    // Tentar enviar novamente após completar perfil
+                    submitReport();
+                }}
+                message="Complete seu perfil para criar denúncias públicas! (Posts anônimos não precisam)"
+            />
         </Container>
     );
 };

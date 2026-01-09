@@ -24,7 +24,11 @@
       "Bash(eas --version:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(npm run start:*)",
+      "Bash(timeout /t 10 /nobreak)",
+      "Bash(tail:*)",
+      "Bash(copy:*)"
     ]
   }
 }

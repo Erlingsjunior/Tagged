@@ -103,23 +103,22 @@ const formatCPF = (text: string) => {
 };
 
 export default function RegisterScreen() {
-    const [name, setName] = useState("");
+    const [nickname, setNickname] = useState("");
     const [email, setEmail] = useState("");
-    const [cpf, setCpf] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const router = useRouter();
     const { register, isLoading, error } = useAuthStore();
 
     const handleRegister = async () => {
-        if (!name || !email || !cpf || !password || !confirmPassword) {
-            Alert.alert("Erro", "Preencha todos os campos");
+        // Apenas email, nickname e senha são obrigatórios
+        if (!email || !nickname || !password || !confirmPassword) {
+            Alert.alert("Erro", "Preencha todos os campos obrigatórios");
             return;
         }
 
-        const cpfValidation = UserSchema.shape.cpf.safeParse(cpf);
-        if (!cpfValidation.success) {
-            Alert.alert("Erro", cpfValidation.error.errors[0].message);
+        if (nickname.length < 3) {
+            Alert.alert("Erro", "O apelido deve ter pelo menos 3 caracteres");
             return;
         }
 
@@ -133,11 +132,12 @@ export default function RegisterScreen() {
             return;
         }
 
-        const success = await register(email, password, name, cpf);
+        // Cadastro progressivo: apenas email, nickname e senha na etapa inicial
+        const success = await register(email, password, nickname);
         if (success) {
             Alert.alert(
                 "Bem-vindo ao Tagged!",
-                "Sua conta foi criada com sucesso. Juntos vamos defender a verdade!",
+                "Sua conta foi criada! Você pode completar seu perfil depois para dar likes e criar denúncias não-anônimas.",
                 [
                     {
                         text: "Começar",
@@ -156,14 +156,6 @@ export default function RegisterScreen() {
                     <Tagline>Nossa voz, sua força, muda tudo.</Tagline>
 
                     <Input
-                        placeholder="Nome completo"
-                        placeholderTextColor={theme.colors.text.secondary}
-                        value={name}
-                        onChangeText={setName}
-                        editable={!isLoading}
-                    />
-
-                    <Input
                         placeholder="Email"
                         placeholderTextColor={theme.colors.text.secondary}
                         value={email}
@@ -174,12 +166,11 @@ export default function RegisterScreen() {
                     />
 
                     <Input
-                        placeholder="CPF (000.000.000-00)"
+                        placeholder="Apelido (ex: soldadoDaJustica, ativistaDoSofa)"
                         placeholderTextColor={theme.colors.text.secondary}
-                        value={cpf}
-                        onChangeText={(text) => setCpf(formatCPF(text))}
-                        keyboardType="numeric"
-                        maxLength={14}
+                        value={nickname}
+                        onChangeText={setNickname}
+                        autoCapitalize="none"
                         editable={!isLoading}
                     />
 
