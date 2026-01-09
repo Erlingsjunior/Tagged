@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import styled from 'styled-components/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CompleteProfileModal from '../../components/CompleteProfileModal';
 import { useAuthStore } from '../../stores/authStore';
 import { usePostsStore } from '../../stores/postsStore';
 import { PostCard } from '../../components/UI/PostCard';
@@ -144,9 +145,14 @@ export default function UserProfileScreen() {
     const { user: currentUser, updateUser } = useAuthStore();
     const { posts, toggleSignature, toggleSave, hasUserSigned } = usePostsStore();
 
+    // Forçar re-render quando signatures mudar
+    const signatures = usePostsStore((state) => state.signatures);
+
     const [profileUser, setProfileUser] = useState<User | null>(null);
     const [activeTab, setActiveTab] = useState<'posts' | 'signed'>('posts');
     const [isFollowing, setIsFollowing] = useState(false);
+    const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+    const [pendingPostId, setPendingPostId] = useState<string | null>(null);
 
     useEffect(() => {
         loadUserProfile();
@@ -159,10 +165,45 @@ export default function UserProfileScreen() {
     }, [currentUser, profileUser]);
 
     const loadUserProfile = async () => {
+        console.log(`🔍 Carregando perfil do usuário ID: ${id}`);
         const usersDbJson = await AsyncStorage.getItem(STORAGE_KEYS.USERS_DB);
         const usersDb = usersDbJson ? JSON.parse(usersDbJson) : {};
+
+        console.log(`📚 UsersDB tem ${Object.keys(usersDb).length} usuários salvos`);
+
         const user = Object.values(usersDb).find((u: any) => u.id === id) as User;
+
+        if (user) {
+            console.log(`✅ Usuário encontrado: ${user.name}`);
+        } else {
+            console.log(`❌ Usuário com ID ${id} não encontrado no banco de dados`);
+            console.log('IDs disponíveis:', Object.values(usersDb).map((u: any) => u.id).join(', '));
+        }
+
         setProfileUser(user || null);
+    };
+
+    const handleLike = (postId: string) => {
+        if (!currentUser) return;
+
+        // Verificar se perfil está completo
+        if (!currentUser.profileComplete) {
+            setPendingPostId(postId);
+            setShowCompleteProfile(true);
+            return;
+        }
+
+        toggleSignature(postId, currentUser.id, currentUser.name, currentUser.avatar);
+    };
+
+    const handleProfileCompleted = () => {
+        setShowCompleteProfile(false);
+
+        // Dar like no post pendente
+        if (pendingPostId && currentUser) {
+            toggleSignature(pendingPostId, currentUser.id, currentUser.name, currentUser.avatar);
+            setPendingPostId(null);
+        }
     };
 
     const handleFollow = async () => {
@@ -289,7 +330,7 @@ export default function UserProfileScreen() {
                             <PostCard
                                 key={post.id}
                                 post={post}
-                                onLike={() => toggleSignature(post.id, currentUser!.id, currentUser!.name, currentUser!.avatar)}
+                                onLike={() => handleLike(post.id)}
                                 onSave={() => toggleSave(post.id)}
                                 onComment={() => router.push(`/comments/${post.id}`)}
                                 onShare={() => {}}
@@ -303,6 +344,16 @@ export default function UserProfileScreen() {
                     )}
                 </View>
             </ScrollView>
+
+            <CompleteProfileModal
+                visible={showCompleteProfile}
+                onClose={() => {
+                    setShowCompleteProfile(false);
+                    setPendingPostId(null);
+                }}
+                onSuccess={handleProfileCompleted}
+                message="Complete seu perfil para dar likes e apoiar denúncias!"
+            />
         </Container>
     );
 }

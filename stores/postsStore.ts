@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { faker } from "@faker-js/faker/locale/pt_BR";
 import { Post, Signature } from "../types/index";
 import { mockPosts, generateMockUsers, generateMockSignatures } from "../services/mockData";
+import { signatureStorageManager } from "../services/signatureStorageManager";
 
 interface PostsState {
     posts: Post[];
@@ -94,11 +95,16 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             set({ loading: true, error: null });
 
             // MIGRATION: Check if we need to clear old data
-            const migrationKey = "tagged_migration_v5";
+            const migrationKey = "tagged_migration_v12";
             const migrationDone = await AsyncStorage.getItem(migrationKey);
 
             if (!migrationDone) {
-                console.log("🔄 Running migration v5: clearing old data and regenerating mock signatures...");
+                console.log("🔄 Running migration v12: Novo schema de usuário com nickname e profileComplete...");
+                console.log("   ✨ Usuários agora têm campo 'nickname' obrigatório");
+                console.log("   ✨ Campo 'profileComplete' indica se cadastro está completo");
+                console.log("   ✨ CPF agora é opcional no cadastro inicial");
+                console.log("   💾 Total: ~8-12K assinaturas = ~3-4 partições = AsyncStorage super leve!");
+
                 await AsyncStorage.multiRemove([
                     STORAGE_KEYS.POSTS,
                     STORAGE_KEYS.SIGNATURES,
@@ -108,14 +114,22 @@ export const usePostsStore = create<PostsState>((set, get) => ({
                     "tagged_migration_v2",
                     "tagged_migration_v3",
                     "tagged_migration_v4",
+                    "tagged_migration_v5",
+                    "tagged_migration_v6",
+                    "tagged_migration_v7",
+                    "tagged_migration_v8",
+                    "tagged_migration_v9",
                 ]);
+
+                // Limpar partições antigas se existirem
+                await signatureStorageManager.clearAllPartitions();
+
                 await AsyncStorage.setItem(migrationKey, "done");
-                console.log("✅ Migration v5 completed!");
+                console.log("✅ Migration v10 completed!");
             }
 
-            const [storedPosts, storedSignatures, storedSaved, storedBaseSupports] = await Promise.all([
+            const [storedPosts, storedSaved, storedBaseSupports] = await Promise.all([
                 AsyncStorage.getItem(STORAGE_KEYS.POSTS),
-                AsyncStorage.getItem(STORAGE_KEYS.SIGNATURES),
                 AsyncStorage.getItem(STORAGE_KEYS.SAVED),
                 AsyncStorage.getItem(STORAGE_KEYS.BASE_SUPPORTS),
             ]);
@@ -124,8 +138,10 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             // Se já tem posts salvos, manter apenas eles
             let posts = storedPosts ? JSON.parse(storedPosts) : [];
 
-            // Inicializar signaturesData primeiro
-            let signaturesData: Record<string, Signature[]> = storedSignatures ? JSON.parse(storedSignatures) : {};
+            // Carregar assinaturas usando o SignatureStorageManager (sistema particionado)
+            console.log('📥 Carregando assinaturas com sistema particionado...');
+            const signaturesMap = await signatureStorageManager.loadSignatures();
+            const signaturesData: Record<string, Signature[]> = Object.fromEntries(signaturesMap);
 
             // Se não há nenhum post (primeira inicialização), carregar mockPosts
             if (posts.length === 0 && !storedPosts) {
@@ -145,9 +161,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
                 }
 
                 // Gerar assinaturas mockadas para posts com alto número de supports
-                if (!storedSignatures) {
+                if (Object.keys(signaturesData).length === 0) {
+                    console.log('🎲 Gerando assinaturas mockadas com sistema particionado...');
+
                     const allUsersArray = Object.values(existingUsersDb);
                     let tempUsersCreated = 0;
+                    const newSignaturesData: Record<string, Signature[]> = {};
 
                     posts.forEach((post: Post) => {
                         if (post.stats.supports > 1000) {
@@ -182,20 +201,23 @@ export const usePostsStore = create<PostsState>((set, get) => ({
                                     signedAt: sig.signedAt,
                                 };
                             });
-                            signaturesData[post.id] = signaturesForPost as any;
+                            newSignaturesData[post.id] = signaturesForPost as any;
                         }
                     });
 
                     // Salvar usuários temporários criados
                     if (tempUsersCreated > 0) {
                         await AsyncStorage.setItem(USERS_DB_KEY, JSON.stringify(existingUsersDb));
-                        console.log(`✅ ${tempUsersCreated} temporary users created for signatures!`);
+                        console.log(`✅ ${tempUsersCreated.toLocaleString()} temporary users created for signatures!`);
                     }
 
-                    // Salvar assinaturas mockadas
-                    if (Object.keys(signaturesData).length > 0) {
-                        await AsyncStorage.setItem(STORAGE_KEYS.SIGNATURES, JSON.stringify(signaturesData));
-                        console.log('✅ Mock signatures created and saved!');
+                    // Salvar assinaturas usando SignatureStorageManager (particionado)
+                    if (Object.keys(newSignaturesData).length > 0) {
+                        console.log('💾 Salvando assinaturas com sistema particionado...');
+                        await signatureStorageManager.saveSignatures(newSignaturesData);
+
+                        // Atualizar signaturesData local
+                        Object.assign(signaturesData, newSignaturesData);
                     }
                 }
             }
@@ -274,12 +296,17 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         // Limpar TODOS os dados do AsyncStorage para forçar recriação completa
         await AsyncStorage.multiRemove([
             STORAGE_KEYS.POSTS,
-            STORAGE_KEYS.SIGNATURES,
             STORAGE_KEYS.SAVED,
             STORAGE_KEYS.BASE_SUPPORTS,
             "tagged_users_db",
-            "tagged_migration_v5",
+            "tagged_migration_v7",
+            "tagged_migration_v8",
+            "tagged_migration_v9",
+            "tagged_migration_v10",
         ]);
+
+        // Limpar partições de assinaturas
+        await signatureStorageManager.clearAllPartitions();
 
         console.log("✅ Dados limpos! Recriando com novos dados mockados...");
 
@@ -340,11 +367,11 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             posts: updatedPosts,
         });
 
-        // Persist to AsyncStorage
+        // Persist to AsyncStorage usando SignatureStorageManager (particionado)
         try {
             const signaturesObj = Object.fromEntries(updatedSignaturesMap);
             await Promise.all([
-                AsyncStorage.setItem(STORAGE_KEYS.SIGNATURES, JSON.stringify(signaturesObj)),
+                signatureStorageManager.saveSignatures(signaturesObj),
                 AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(updatedPosts)),
             ]);
         } catch (error) {
