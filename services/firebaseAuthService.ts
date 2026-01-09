@@ -83,12 +83,35 @@ export const registerUser = async (
             profileComplete: profileComplete, // NOVO campo
         };
 
-        // Salvar no Firestore
-        await setDoc(doc(db, 'users', firebaseUser.uid), {
-            ...userData,
+        // Preparar dados para Firestore (remover campos undefined)
+        const firestoreData: any = {
+            id: firebaseUser.uid,
+            email: email,
+            name: fullData?.name || nickname,
+            nickname: nickname,
+            cpf: fullData?.cpf || '',
+            phone: fullData?.phone || '',
+            verified: false,
+            role: 'user',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-        });
+            stats: {
+                reportsCreated: 0,
+                reportsSigned: 0,
+                impactScore: 0,
+            },
+            following: [],
+            followers: [],
+            profileComplete: profileComplete,
+        };
+
+        // Adicionar campos opcionais apenas se tiverem valor
+        if (userData.avatar) firestoreData.avatar = userData.avatar;
+        if (userData.bio) firestoreData.bio = userData.bio;
+        if (userData.location) firestoreData.location = userData.location;
+
+        // Salvar no Firestore
+        await setDoc(doc(db, 'users', firebaseUser.uid), firestoreData);
 
         console.log('✅ Usuário registrado com sucesso!');
         console.log(`   📧 Email: ${email}`);
