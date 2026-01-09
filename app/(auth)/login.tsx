@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import styled from "styled-components/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "../../stores/authStore";
 import { theme } from "../../constants/Theme";
 
@@ -81,6 +82,28 @@ export default function LoginScreen() {
     const router = useRouter();
     const { login, isLoading, error } = useAuthStore();
 
+    const handleClearStorage = async () => {
+        Alert.alert(
+            "Limpar Storage",
+            "Isso vai apagar TODOS os dados locais. Tem certeza?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Limpar Tudo",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await AsyncStorage.clear();
+                            Alert.alert("✅ Sucesso", "Storage limpo! Recarregue o app.");
+                        } catch (error) {
+                            Alert.alert("❌ Erro", "Não foi possível limpar o storage");
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert("Erro", "Preencha todos os campos");
@@ -135,6 +158,15 @@ export default function LoginScreen() {
                 >
                     <ButtonText variant="secondary">Criar Conta</ButtonText>
                 </Button>
+
+                <TouchableOpacity
+                    onPress={handleClearStorage}
+                    style={{ marginTop: 20, padding: 10 }}
+                >
+                    <Text style={{ color: theme.colors.error, textAlign: "center", fontSize: 12 }}>
+                        🧹 Limpar Storage (DEBUG)
+                    </Text>
+                </TouchableOpacity>
             </Content>
         </Container>
     );

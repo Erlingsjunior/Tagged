@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import styled from "styled-components/native";
+import CompleteProfileModal from "../../components/CompleteProfileModal";
 import { usePostsStore } from "../../stores/postsStore";
 import { useAuthStore } from "../../stores/authStore";
 import { usePetition } from "../../hooks/petition";
@@ -411,11 +412,16 @@ export default function PostDetailsScreen() {
     const router = useRouter();
     const { posts, toggleSignature, hasUserSigned, getSignatures } =
         usePostsStore();
+
+    // Forçar re-render quando signatures mudar
+    const signaturesMap = usePostsStore((state) => state.signatures);
+
     const { user } = useAuthStore();
     const [showAllComments, setShowAllComments] = useState(false);
     const [showAllBadges, setShowAllBadges] = useState(false);
     const [heartAnimation] = useState(new Animated.Value(0));
     const [showHeart, setShowHeart] = useState(false);
+    const [showCompleteProfile, setShowCompleteProfile] = useState(false);
 
     const post = posts.find((p) => p.id === id);
 
@@ -512,6 +518,13 @@ export default function PostDetailsScreen() {
 
     const handleSign = () => {
         if (!user) return;
+
+        // Verificar se perfil está completo
+        if (!user.profileComplete) {
+            setShowCompleteProfile(true);
+            return;
+        }
+
         const wasSigned = hasUserSigned(post.id, user.id);
         toggleSignature(post.id, user.id, user.name, user.avatar);
 
@@ -519,6 +532,21 @@ export default function PostDetailsScreen() {
         if (!wasSigned) {
             animateHeart();
             playHeartSound();
+        }
+    };
+
+    const handleProfileCompleted = () => {
+        setShowCompleteProfile(false);
+
+        // Dar like após completar perfil
+        if (user) {
+            const wasSigned = hasUserSigned(post.id, user.id);
+            toggleSignature(post.id, user.id, user.name, user.avatar);
+
+            if (!wasSigned) {
+                animateHeart();
+                playHeartSound();
+            }
         }
     };
 
@@ -1345,6 +1373,13 @@ export default function PostDetailsScreen() {
                     />
                 </Animated.View>
             )}
+
+            <CompleteProfileModal
+                visible={showCompleteProfile}
+                onClose={() => setShowCompleteProfile(false)}
+                onSuccess={handleProfileCompleted}
+                message="Complete seu perfil para dar likes e apoiar denúncias!"
+            />
         </Container>
     );
 }

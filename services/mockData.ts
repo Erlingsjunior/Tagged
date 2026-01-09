@@ -101,6 +101,25 @@ const getRelevantImageUrl = (
 
 const statuses = ["active", "investigating", "resolved"] as const;
 
+// Criar lista fixa de autores mockados para garantir IDs consistentes
+const FIXED_AUTHORS = [
+    { id: "author_1", name: "Maria Silva", avatar: "https://i.pravatar.cc/150?img=1", verified: true },
+    { id: "author_2", name: "João Santos", avatar: "https://i.pravatar.cc/150?img=2", verified: false },
+    { id: "author_3", name: "Ana Costa", avatar: "https://i.pravatar.cc/150?img=3", verified: true },
+    { id: "author_4", name: "Pedro Oliveira", avatar: "https://i.pravatar.cc/150?img=4", verified: false },
+    { id: "author_5", name: "Carla Souza", avatar: "https://i.pravatar.cc/150?img=5", verified: true },
+    { id: "author_6", name: "Lucas Ferreira", avatar: "https://i.pravatar.cc/150?img=6", verified: false },
+    { id: "author_7", name: "Juliana Lima", avatar: "https://i.pravatar.cc/150?img=7", verified: true },
+    { id: "author_8", name: "Rafael Alves", avatar: "https://i.pravatar.cc/150?img=8", verified: false },
+    { id: "author_9", name: "Patricia Rocha", avatar: "https://i.pravatar.cc/150?img=9", verified: true },
+    { id: "author_10", name: "Bruno Martins", avatar: "https://i.pravatar.cc/150?img=10", verified: false },
+    { id: "author_11", name: "Fernanda Ribeiro", avatar: "https://i.pravatar.cc/150?img=11", verified: true },
+    { id: "author_12", name: "Gabriel Araújo", avatar: "https://i.pravatar.cc/150?img=12", verified: false },
+    { id: "author_13", name: "Camila Barbosa", avatar: "https://i.pravatar.cc/150?img=13", verified: true },
+    { id: "author_14", name: "Rodrigo Dias", avatar: "https://i.pravatar.cc/150?img=14", verified: false },
+    { id: "author_15", name: "Amanda Vieira", avatar: "https://i.pravatar.cc/150?img=15", verified: true },
+];
+
 // Gera posts mockados realistas
 const generateMockPost = (id: number): Post => {
     const category = faker.helpers.arrayElement(categories);
@@ -472,15 +491,7 @@ const generateMockPost = (id: number): Post => {
                   name: "Tagged Platform",
                   verified: true,
               }
-            : {
-                  id: faker.string.uuid(),
-                  name: faker.person.fullName(),
-                  avatar: `https://i.pravatar.cc/150?img=${faker.number.int({
-                      min: 1,
-                      max: 70,
-                  })}`,
-                  verified: faker.datatype.boolean(),
-              },
+            : FIXED_AUTHORS[id % FIXED_AUTHORS.length], // Usar autor fixo baseado no ID do post
         location: {
             city,
             state: faker.location.state({ abbreviated: true }),
@@ -554,6 +565,10 @@ export const generateMockUsers = () => {
         const email = `user${index + 1}@tagged.com`;
         const cpf = faker.string.numeric(11);
 
+        // Gerar apelido baseado no nome
+        const firstName = author.name.split(' ')[0].toLowerCase();
+        const nickname = `${firstName}${faker.number.int({ min: 10, max: 99 })}`;
+
         // Contar quantas denúncias este autor criou
         const reportsCreated = mockPosts.filter(
             p => !p.isAnonymous && p.author.id === author.id
@@ -566,6 +581,7 @@ export const generateMockUsers = () => {
             id: author.id,
             email: email,
             name: author.name,
+            nickname: nickname, // NOVO: apelido do usuário
             cpf: cpf,
             avatar: author.avatar,
             phone: faker.phone.number(),
@@ -585,6 +601,7 @@ export const generateMockUsers = () => {
             },
             following: [],
             followers: [],
+            profileComplete: true, // NOVO: mock users têm perfil completo
             password: 'password123', // Senha padrão para testes
         };
     });
@@ -596,14 +613,59 @@ export const generateMockUsers = () => {
 export const generateMockSignatures = (postId: string, totalSupports: number, allUsers: any[]) => {
     const signatures: any[] = [];
 
-    // Se o post tem muitos supports, gerar assinaturas mockadas
-    // Vamos gerar 80% do total de supports como assinaturas mockadas
-    const mockSignaturesCount = Math.floor(totalSupports * 0.8);
+    /**
+     * 🎯 ESTRATÉGIA MVP v10: NÚMEROS IMPRESSIONANTES + DADOS LEVES
+     *
+     * Para demonstrar TODAS as features sem estourar AsyncStorage (~6-10MB):
+     *
+     * - Posts < 1K: 100 assinaturas (apenas contador)
+     * - Posts 1K-5K: 1.000-1.500 assinaturas REAIS (desbloqueia documento!)
+     * - Posts 5K+: máximo 3.000 assinaturas REAIS (todas features + segurança)
+     *
+     * Total estimado: ~8-12K assinaturas = ~3-4 partições = AsyncStorage super seguro!
+     *
+     * ✅ Desbloqueia documento de petição (1K+)
+     * ✅ Desbloqueia chat colaborativo (1K+)
+     * ✅ Demonstra paginação real (3 páginas)
+     * ✅ Mostra particionamento funcionando
+     * ✅ Mantém AsyncStorage leve e seguro
+     */
+
+    if (totalSupports < 100) {
+        // Posts muito pequenos: sem assinaturas mockadas
+        console.log(`⏭️  Post ${postId}: ${totalSupports.toLocaleString()} supports - sem assinaturas mockadas`);
+        return signatures;
+    }
+
+    // Estratégia escalonada CONSERVADORA baseada em supports
+    let mockSignaturesCount = 0;
+
+    if (totalSupports < 1000) {
+        // Posts pequenos: apenas 100 assinaturas
+        mockSignaturesCount = 100;
+    } else if (totalSupports < 5000) {
+        // Milestone 1K-5K: 1K-1.5K assinaturas REAIS (desbloqueia documento!)
+        mockSignaturesCount = Math.min(1500, Math.floor(totalSupports * 0.3));
+    } else {
+        // Posts 5K+: máximo 3K assinaturas (todas features + segurança)
+        mockSignaturesCount = Math.min(3000, Math.floor(totalSupports * 0.2));
+    }
+
+    const unlockDocument = mockSignaturesCount >= 1000;
+    const unlockChat = mockSignaturesCount >= 1000;
+
+    console.log(`📝 Gerando ${mockSignaturesCount.toLocaleString()} assinaturas para post ${postId} (contador: ${totalSupports.toLocaleString()} supports)`);
+    if (unlockDocument) {
+        console.log(`   🔓 Documento de petição DESBLOQUEADO!`);
+    }
+    if (unlockChat) {
+        console.log(`   💬 Chat colaborativo DESBLOQUEADO!`);
+    }
 
     for (let i = 0; i < mockSignaturesCount; i++) {
         // Escolher um usuário aleatório ou criar um novo
         let user;
-        if (i < allUsers.length && faker.datatype.boolean()) {
+        if (i < allUsers.length && Math.random() > 0.5) {
             user = allUsers[i % allUsers.length];
         } else {
             // Criar usuário temporário para assinatura
@@ -622,6 +684,8 @@ export const generateMockSignatures = (postId: string, totalSupports: number, al
             signedAt: faker.date.recent({ days: 30 }),
         });
     }
+
+    console.log(`✅ ${mockSignaturesCount.toLocaleString()} assinaturas geradas! (contador mostra ${totalSupports.toLocaleString()})`);
 
     return signatures;
 };

@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { PostCard } from "../../components/UI/PostCard";
 import { SearchBar } from "../../components/UI/SearchBar";
 import type { SearchFilters } from "../../components/UI/SearchBar";
+import CompleteProfileModal from "../../components/CompleteProfileModal";
 import { usePostsStore } from "../../stores/postsStore";
 import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
@@ -24,6 +25,9 @@ export const FeedView: React.FC = () => {
         hasUserSigned,
     } = usePostsStore();
 
+    // Forçar re-render quando signatures mudar
+    const signatures = usePostsStore((state) => state.signatures);
+
     const { user } = useAuthStore();
     const { getOrCreateConversation, canStartConversation } = useChatStore();
 
@@ -33,6 +37,8 @@ export const FeedView: React.FC = () => {
         location: "all",
         tags: [],
     });
+    const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+    const [pendingPostId, setPendingPostId] = useState<string | null>(null);
 
     useEffect(() => {
         loadPosts();
@@ -119,7 +125,25 @@ export const FeedView: React.FC = () => {
 
     const handleSignature = async (postId: string) => {
         if (!user) return;
+
+        // Verificar se perfil está completo
+        if (!user.profileComplete) {
+            setPendingPostId(postId);
+            setShowCompleteProfile(true);
+            return;
+        }
+
         await toggleSignature(postId, user.id, user.name, user.avatar);
+    };
+
+    const handleProfileCompleted = async () => {
+        setShowCompleteProfile(false);
+
+        // Dar like no post pendente
+        if (pendingPostId && user) {
+            await toggleSignature(pendingPostId, user.id, user.name, user.avatar);
+            setPendingPostId(null);
+        }
     };
 
     const handleComment = (postId: string) => {
@@ -217,6 +241,16 @@ export const FeedView: React.FC = () => {
                 maxToRenderPerBatch={10}
                 updateCellsBatchingPeriod={50}
                 initialNumToRender={10}
+            />
+
+            <CompleteProfileModal
+                visible={showCompleteProfile}
+                onClose={() => {
+                    setShowCompleteProfile(false);
+                    setPendingPostId(null);
+                }}
+                onSuccess={handleProfileCompleted}
+                message="Complete seu perfil para dar likes e apoiar denúncias!"
             />
         </SafeAreaView>
     );
